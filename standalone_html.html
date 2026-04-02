@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Team Skills Directory</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:#f8fafc;}
+  .wrap{min-height:100vh;padding:28px 20px;max-width:860px;margin:0 auto;}
+  .header-card{background:linear-gradient(135deg,#0078d4 0%,#106ebe 100%);padding:28px;color:#fff;border-radius:16px;margin-bottom:20px;}
+  .card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;}
+  .section{padding:24px;}
+  .tab-bar{display:flex;gap:2px;background:#f1f5f9;border-radius:10px;padding:3px;width:fit-content;margin-bottom:20px;}
+  .tab-btn{padding:8px 20px;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;}
+  .tab-active{background:#fff;color:#0078d4;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+  .tab-inactive{background:transparent;color:#64748b;}
+  .field-input{width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border .15s;color:#1e293b;background:#fff;}
+  .field-input:focus{border-color:#0078d4;box-shadow:0 0 0 3px rgba(0,120,212,.1);}
+  .label{font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:block;}
+  .config-box{background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:14px;padding:22px;margin-bottom:20px;}
+  .btn-connect{padding:11px 24px;border-radius:10px;border:none;background:#0078d4;color:#fff;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:8px;}
+  .btn-connect:disabled{background:#e2e8f0;color:#94a3b8;cursor:not-allowed;}
+  .avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;}
+  .file-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;overflow:hidden;margin-bottom:10px;transition:border .15s;}
+  .file-card:hover{border-color:#69b3f5;box-shadow:0 4px 16px rgba(0,120,212,.08);}
+  .file-row{display:flex;align-items:center;gap:14px;padding:16px 18px;}
+  .badge-md{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;background:#dbeafe;color:#1e40af;}
+  .meta{font-size:12px;color:#94a3b8;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .dot{width:3px;height:3px;border-radius:50%;background:#cbd5e1;}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid;font-family:'Inter',sans-serif;transition:all .15s;}
+  .btn-ghost{border-color:#e2e8f0;background:#f8fafc;color:#64748b;}
+  .btn-primary{border-color:#0078d4;background:#0078d4;color:#fff;}
+  .btn-primary:hover{background:#106ebe;}
+  .btn-outline{border-color:#69b3f5;background:#eff6ff;color:#0078d4;}
+  .drop-zone{border:2px dashed #bfdbfe;border-radius:14px;padding:32px;text-align:center;cursor:pointer;transition:all .15s;background:#f8fafc;}
+  .drop-zone:hover{border-color:#0078d4;background:#eff6ff;}
+  .preview-pre{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;font-size:12px;line-height:1.8;font-family:monospace;max-height:300px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;margin-top:12px;}
+  .toast{position:fixed;bottom:24px;right:24px;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;z-index:999;animation:slideUp .25s ease;box-shadow:0 8px 24px rgba(0,0,0,.12);}
+  .toast-success{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;}
+  .toast-error{background:#fef2f2;color:#991b1b;border:1px solid #fecaca;}
+  .toast-info{background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;}
+  .az-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-top:12px;max-height:300px;overflow-y:auto;}
+  .az-member{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;}
+  .search-wrap{position:relative;margin-bottom:16px;}
+  .search-input{width:100%;padding:11px 14px 11px 40px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;outline:none;color:#1e293b;}
+  .search-input:focus{border-color:#0078d4;}
+  .empty{text-align:center;padding:48px 24px;border:2px dashed #e2e8f0;border-radius:14px;}
+  .progress-bar{height:3px;background:#e2e8f0;border-radius:4px;overflow:hidden;margin-top:12px;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,#0078d4,#50c0f0);border-radius:4px;animation:progress 1.5s ease-in-out infinite;}
+  @keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  @keyframes progress{0%{width:20%}50%{width:75%}100%{width:20%}}
+  .spinner{animation:spin 1s linear infinite;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const AVATAR_COLORS = [
+  {bg:"#f3f0ff",text:"#6d28d9"},{bg:"#ecfdf5",text:"#065f46"},
+  {bg:"#fff7ed",text:"#9a3412"},{bg:"#eff6ff",text:"#1e40af"},
+  {bg:"#fdf4ff",text:"#86198f"},{bg:"#fefce8",text:"#854d0e"},
+];
+const ci = n => n.split("").reduce((a,c)=>a+c.charCodeAt(0),0) % AVATAR_COLORS.length;
+const initials = n => n.trim().split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
+const fmtDate = d => new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
+const fmtSize = b => b<1024?b+"B":b<1048576?(b/1024).toFixed(1)+"KB":(b/1048576).toFixed(1)+"MB";
+
+function App() {
+  const [tab, setTab] = useState("settings");
+  const [files, setFiles] = useState([]);
+  const [search, setSearch] = useState("");
+  const [preview, setPreview] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [pat, setPat] = useState(localStorage.getItem("ado_pat")||"");
+  const [org, setOrg] = useState(localStorage.getItem("ado_org")||"Sogolytics");
+  const [proxyUrl, setProxyUrl] = useState(localStorage.getItem("ado_proxy")||"https://teamsgraph.onrender.com");
+  const [azMembers, setAzMembers] = useState(JSON.parse(localStorage.getItem("ado_members")||"[]"));
+  const [fetching, setFetching] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [fileTitle, setFileTitle] = useState("");
+  const [fileDesc, setFileDesc] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef();
+
+  useEffect(()=>{
+    const saved = JSON.parse(localStorage.getItem("skills_files")||"[]");
+    setFiles(saved);
+    if (azMembers.length > 0) setTab("upload");
+  },[]);
+
+  const showToast = (msg,sev="success") => { setToast({msg,sev}); setTimeout(()=>setToast(null),3500); };
+
+  const fetchMembers = async () => {
+    if (!pat.trim()||!proxyUrl.trim()) { showToast("Enter proxy URL and PAT","error"); return; }
+    setFetching(true);
+    try {
+      const base = proxyUrl.trim().replace(/\/$/,"");
+      const res = await fetch(`${base}/members?org=${encodeURIComponent(org.trim())}`, {
+        headers:{ "x-ado-token": pat.trim() }
+      });
+      if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error||`HTTP ${res.status}`); }
+      const data = await res.json();
+      const members = data.members||[];
+      setAzMembers(members);
+      localStorage.setItem("ado_members", JSON.stringify(members));
+      localStorage.setItem("ado_pat", pat.trim());
+      localStorage.setItem("ado_org", org.trim());
+      localStorage.setItem("ado_proxy", proxyUrl.trim());
+      showToast(`${members.length} members loaded`,"info");
+      setTab("upload");
+    } catch(e) { showToast(`Error: ${e.message}`,"error"); }
+    setFetching(false);
+  };
+
+  const handleFilePick = file => {
+    if (!file) return;
+    if (!file.name.endsWith(".md")) { showToast("Only .md files allowed","error"); return; }
+    setSelectedFile(file);
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile||!selectedMember) return;
+    setUploading(true);
+    const content = await selectedFile.text();
+    const entry = {
+      id:`${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      filename:selectedFile.name, title:fileTitle.trim()||selectedFile.name.replace(".md",""),
+      desc:fileDesc.trim(), uploader:selectedMember.displayName,
+      uploaderEmail:selectedMember.email||"", size:selectedFile.size, ts:Date.now(), content
+    };
+    const updated = [entry, ...files];
+    setFiles(updated);
+    localStorage.setItem("skills_files", JSON.stringify(updated));
+    setTab("browse"); setFileTitle(""); setFileDesc(""); setSelectedFile(null); setSelectedMember(null);
+    showToast(`${selectedFile.name} uploaded`);
+    setUploading(false);
+  };
+
+  const onDrop = e => { e.preventDefault(); setDragOver(false); handleFilePick(e.dataTransfer.files[0]); };
+
+  const download = f => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([f.content],{type:"text/markdown"}));
+    a.download = f.filename; a.click();
+    showToast(`Downloaded ${f.filename}`);
+  };
+
+  const filtered = files.filter(f => {
+    const q = search.toLowerCase();
+    return !q||[f.filename,f.uploader,f.content,f.title||"",f.desc||""].some(s=>s.toLowerCase().includes(q));
+  });
+
+  const allFilled = selectedMember && selectedFile;
+  const uniqueMembers = new Set(files.map(f=>f.uploader)).size;
+
+  return (
+    <div className="wrap">
+      {toast&&<div className={`toast toast-${toast.sev}`}>{toast.msg}</div>}
+
+      <div className="header-card">
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
+          <div style={{width:46,height:46,borderRadius:12,background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>📂</div>
+          <div>
+            <h1 style={{fontSize:22,fontWeight:600,color:"#fff",margin:0}}>Team Skills Directory</h1>
+            <p style={{fontSize:13,color:"rgba(255,255,255,.8)",margin:0}}>dev.azure.com / <b>Sogolytics</b></p>
+          </div>
+          {azMembers.length>0&&<span style={{marginLeft:"auto",fontSize:11,padding:"3px 10px",borderRadius:20,background:"rgba(255,255,255,.2)",color:"#fff",border:"1px solid rgba(255,255,255,.3)"}}>
+            ● Azure DevOps · {azMembers.length} members
+          </span>}
+        </div>
+        <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
+          {[["📄",files.length,"Total files"],["👥",uniqueMembers,"Contributors"]].map(([ic,v,l])=>(
+            <div key={l} style={{display:"flex",alignItems:"center",gap:8,background:"rgba(255,255,255,.15)",borderRadius:10,padding:"8px 14px"}}>
+              <span>{ic}</span>
+              <div><p style={{margin:0,fontSize:18,fontWeight:600,color:"#fff",lineHeight:1}}>{v}</p><p style={{margin:0,fontSize:11,color:"rgba(255,255,255,.7)"}}>{l}</p></div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="section" style={{paddingBottom:0}}>
+          <div className="tab-bar">
+            {[["settings","Azure DevOps"],["upload","Upload"],["browse",`Browse (${files.length})`]].map(([t,l])=>(
+              <button key={t} className={`tab-btn ${tab===t?"tab-active":"tab-inactive"}`} onClick={()=>setTab(t)}>{l}</button>
+            ))}
+          </div>
+        </div>
+
+        {tab==="settings"&&(
+          <div className="section">
+            <div className="config-box">
+              <p style={{fontSize:14,fontWeight:600,color:"#0c4a6e",marginBottom:4}}>Connect Azure DevOps</p>
+              <p style={{fontSize:12,color:"#0369a1",marginBottom:16}}>Enter your proxy URL and PAT to load team members</p>
+              <div style={{display:"grid",gap:14}}>
+                <div>
+                  <span className="label">Proxy URL</span>
+                  <input className="field-input" value={proxyUrl} onChange={e=>setProxyUrl(e.target.value)} placeholder="https://teamsgraph.onrender.com"/>
+                </div>
+                <div>
+                  <span className="label">Organization</span>
+                  <input className="field-input" value={org} onChange={e=>setOrg(e.target.value)} placeholder="Sogolytics"/>
+                </div>
+                <div>
+                  <span className="label">Personal Access Token (PAT)</span>
+                  <input className="field-input" type="password" value={pat} onChange={e=>setPat(e.target.value)} placeholder="Paste PAT here…"/>
+                </div>
+                <button className="btn-connect" onClick={fetchMembers} disabled={fetching||!pat.trim()||!proxyUrl.trim()}>
+                  {fetching&&<svg className="spinner" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>}
+                  {fetching?"Connecting…":"Connect & load members"}
+                </button>
+                {fetching&&<div className="progress-bar"><div className="progress-fill"/></div>}
+              </div>
+            </div>
+            {azMembers.length>0&&(
+              <div>
+                <p style={{fontSize:13,fontWeight:600,marginBottom:10}}>Loaded members ({azMembers.length})</p>
+                <div className="az-grid">
+                  {azMembers.map(m=>(
+                    <div className="az-member" key={m.id}>
+                      <div className="avatar" style={{width:34,height:34,fontSize:12,...AVATAR_COLORS[ci(m.displayName)]}}>{initials(m.displayName)}</div>
+                      <div style={{minWidth:0}}>
+                        <p style={{margin:0,fontSize:12,fontWeight:600,color:"#1e293b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.displayName}</p>
+                        <p style={{margin:0,fontSize:11,color:"#64748b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.email||"—"}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab==="upload"&&(
+          <div className="section" style={{maxWidth:540}}>
+            {azMembers.length===0?(
+              <div className="empty">
+                <p style={{fontSize:14,fontWeight:600,marginBottom:6}}>Not connected yet</p>
+                <p style={{fontSize:13,color:"#64748b",marginBottom:16}}>Connect Azure DevOps first</p>
+                <button className="btn btn-primary" onClick={()=>setTab("settings")}>Go to settings</button>
+              </div>
+            ):(
+              <>
+                <div style={{marginBottom:16}}>
+                  <span className="label">Select team member</span>
+                  <select className="field-input" value={selectedMember?.id||""} onChange={e=>setSelectedMember(azMembers.find(x=>x.id===e.target.value)||null)}>
+                    <option value="">— Choose from Azure DevOps —</option>
+                    {azMembers.map(m=><option key={m.id} value={m.id}>{m.displayName}{m.email?` (${m.email})`:""}</option>)}
+                  </select>
+                  {selectedMember&&(
+                    <div style={{display:"flex",alignItems:"center",gap:10,marginTop:10,padding:"10px 14px",background:"#eff6ff",borderRadius:10,border:"1.5px solid #bfdbfe"}}>
+                      <div className="avatar" style={{width:36,height:36,fontSize:12,...AVATAR_COLORS[ci(selectedMember.displayName)]}}>{initials(selectedMember.displayName)}</div>
+                      <div>
+                        <p style={{margin:0,fontSize:13,fontWeight:600,color:"#1e293b"}}>{selectedMember.displayName}</p>
+                        <p style={{margin:0,fontSize:11,color:"#0369a1"}}>{selectedMember.email||"Azure DevOps member"}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div style={{marginBottom:14}}>
+                  <span className="label">File title</span>
+                  <input className="field-input" value={fileTitle} onChange={e=>setFileTitle(e.target.value)} placeholder="e.g. Frontend & React Skills"/>
+                </div>
+                <div style={{marginBottom:14}}>
+                  <span className="label">Short description</span>
+                  <textarea className="field-input" value={fileDesc} onChange={e=>setFileDesc(e.target.value)} placeholder="Brief summary of skills" rows={2} style={{resize:"vertical",lineHeight:1.6}}/>
+                </div>
+                <div style={{marginBottom:18}}>
+                  <span className="label">skill.md file</span>
+                  <div className={`drop-zone${dragOver?" drop-active":""}`}
+                    onDragOver={e=>{e.preventDefault();setDragOver(true)}}
+                    onDragLeave={()=>setDragOver(false)}
+                    onDrop={onDrop}
+                    onClick={()=>fileRef.current.click()}
+                  >
+                    {selectedFile?(
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12}}>
+                        <span style={{fontSize:28}}>📄</span>
+                        <div style={{textAlign:"left"}}>
+                          <p style={{margin:0,fontSize:14,fontWeight:600}}>{selectedFile.name}</p>
+                          <p style={{margin:"2px 0 0",fontSize:12,color:"#64748b"}}>{(selectedFile.size/1024).toFixed(1)} KB · <span style={{color:"#0078d4",cursor:"pointer"}} onClick={e=>{e.stopPropagation();setSelectedFile(null);fileRef.current.value="";}}>Remove</span></p>
+                        </div>
+                      </div>
+                    ):(
+                      <>
+                        <div style={{fontSize:32,marginBottom:8}}>☁️</div>
+                        <p style={{fontSize:14,fontWeight:600,marginBottom:4}}>Drop your <code style={{background:"#dbeafe",color:"#1e40af",padding:"1px 6px",borderRadius:4,fontSize:12}}>skill.md</code> here</p>
+                        <p style={{fontSize:12,color:"#94a3b8"}}>or click to browse</p>
+                      </>
+                    )}
+                  </div>
+                  <input ref={fileRef} type="file" accept=".md" style={{display:"none"}} onChange={e=>handleFilePick(e.target.files[0])}/>
+                </div>
+                <button onClick={handleUpload} disabled={!allFilled||uploading} style={{width:"100%",padding:"12px",borderRadius:10,border:"none",background:allFilled?"#0078d4":"#e2e8f0",color:allFilled?"#fff":"#94a3b8",fontSize:14,fontWeight:600,fontFamily:"Inter,sans-serif",cursor:allFilled?"pointer":"not-allowed"}}>
+                  {uploading?"Uploading…":"Upload skill file"}
+                </button>
+                {!allFilled&&<p style={{fontSize:11,color:"#94a3b8",textAlign:"center",marginTop:8}}>
+                  {!selectedMember&&!selectedFile?"Select a member and file":!selectedMember?"Select a team member":"Select a .md file"}
+                </p>}
+              </>
+            )}
+          </div>
+        )}
+
+        {tab==="browse"&&(
+          <div className="section">
+            <div className="search-wrap">
+              <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",color:"#94a3b8",fontSize:15}}>⌕</span>
+              <input className="search-input" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by name, filename, or content…"/>
+            </div>
+            {files.length===0&&(
+              <div className="empty">
+                <p style={{fontSize:15,fontWeight:600,marginBottom:6}}>No files yet</p>
+                <p style={{fontSize:13,color:"#64748b",marginBottom:16}}>Upload your first skill.md</p>
+                <button className="btn btn-primary" onClick={()=>setTab("upload")}>Upload now</button>
+              </div>
+            )}
+            {filtered.map(f=>{
+              const ac = AVATAR_COLORS[ci(f.uploader)];
+              const isOpen = preview?.id===f.id;
+              return (
+                <div key={f.id} className={`file-card${isOpen?" file-card-active":""}`} style={isOpen?{borderColor:"#0078d4"}:{}}>
+                  <div className="file-row">
+                    <div className="avatar" style={{background:ac.bg,color:ac.text}}>{initials(f.uploader)}</div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+                        <span style={{fontSize:14,fontWeight:600,color:"#1e293b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.title||f.filename}</span>
+                        <span className="badge-md">MD</span>
+                      </div>
+                      {f.desc&&<p style={{fontSize:12,color:"#475569",margin:"0 0 3px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.desc}</p>}
+                      <div className="meta">
+                        <span style={{fontWeight:500,color:"#475569"}}>{f.uploader}</span>
+                        {f.uploaderEmail&&<><span className="dot"/><span>{f.uploaderEmail}</span></>}
+                        <span className="dot"/><span>{fmtDate(f.ts)}</span>
+                        <span className="dot"/><span>{fmtSize(f.size)}</span>
+                      </div>
+                    </div>
+                    <div style={{display:"flex",gap:8,flexShrink:0}}>
+                      <button className={`btn ${isOpen?"btn-outline":"btn-ghost"}`} onClick={()=>setPreview(isOpen?null:f)}>
+                        {isOpen?"Hide":"Preview"}
+                      </button>
+                      <button className="btn btn-primary" onClick={()=>download(f)}>Download</button>
+                    </div>
+                  </div>
+                  {isOpen&&<div style={{padding:"0 18px 16px"}}><pre className="preview-pre">{f.content}</pre></div>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.render(<App/>, document.getElementById("root"));
+</script>
+</body>
+</html>
