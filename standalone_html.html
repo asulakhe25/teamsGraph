@@ -79,6 +79,8 @@ function App() {
   const [memSearch, setMemSearch] = useState("");
   const [memDrop,  setMemDrop]  = useState(false);
   const [selTeam,  setSelTeam]  = useState("");
+  const [teamSearch, setTeamSearch] = useState("");
+  const [teamDrop, setTeamDrop] = useState(false);
   const [customFolder, setCustomFolder] = useState("");
   const [browseFolder, setBrowseFolder] = useState("All");
   const [title,    setTitle]    = useState("");
@@ -88,14 +90,29 @@ function App() {
   const [uploading,setUploading]= useState(false);
   const fileRef = useRef();
   const memRef  = useRef();
+  const teamRef = useRef();
 
   const filteredMembers = members.filter(m=>{
     const q=memSearch.toLowerCase();
     return !q||m.displayName.toLowerCase().includes(q)||(m.email||"").toLowerCase().includes(q);
   });
 
+  // Build all folder options: ADO teams + custom folders from existing files
+  const existingFolders = [...new Set(files.map(f=>f.folder).filter(f=>f&&f!=="General"&&!teams.some(t=>t.name===f)))];
+  const allFolderOptions = [
+    ...teams.map(t=>({id:t.id,name:t.name,label:t.name+(t.project?` (${t.project})`:""),type:"team"})),
+    ...existingFolders.map(f=>({id:f,name:f,label:f,type:"folder"})),
+  ];
+  const filteredFolders = allFolderOptions.filter(f=>{
+    const q=teamSearch.toLowerCase();
+    return !q||f.label.toLowerCase().includes(q);
+  });
+
   useEffect(()=>{
-    const handler = e=>{ if (memRef.current && !memRef.current.contains(e.target)) setMemDrop(false); };
+    const handler = e=>{
+      if (memRef.current && !memRef.current.contains(e.target)) setMemDrop(false);
+      if (teamRef.current && !teamRef.current.contains(e.target)) setTeamDrop(false);
+    };
     document.addEventListener("mousedown",handler);
     return ()=>document.removeEventListener("mousedown",handler);
   },[]);
@@ -289,24 +306,54 @@ function App() {
                   )}
                 </div>
 
-                <div style={{marginBottom:16}}>
+                <div style={{marginBottom:16}} ref={teamRef}>
                   <span className="lbl">Team / Folder</span>
-                  <div style={{display:"flex",gap:8}}>
-                    <select className="field" style={{flex:1}} value={selTeam} onChange={e=>{setSelTeam(e.target.value);setCustomFolder("");}}>
-                      <option value="">General</option>
-                      {teams.map(t=><option key={t.id} value={t.name}>{t.name}{t.project?` (${t.project})`:""}</option>)}
-                      {/* Show existing custom folders from files */}
-                      {[...new Set(files.map(f=>f.folder).filter(f=>f&&f!=="General"&&!teams.some(t=>t.name===f)))].map(f=>(
-                        <option key={f} value={f}>{f}</option>
-                      ))}
-                      <option value="__new__">+ Create new folder</option>
-                    </select>
+                  <div style={{position:"relative"}}>
+                    <input className="field" placeholder="Search teams or folders…"
+                      value={selTeam&&selTeam!=="__new__"&&!teamDrop ? selTeam : teamSearch}
+                      onFocus={()=>{setTeamDrop(true);if(selTeam&&selTeam!=="__new__")setTeamSearch("");}}
+                      onChange={e=>{setTeamSearch(e.target.value);setTeamDrop(true);if(selTeam&&selTeam!=="__new__"){setSelTeam("");setCustomFolder("");}}}
+                      style={{paddingRight:selTeam&&selTeam!=="__new__"?36:14}}/>
+                    {selTeam&&selTeam!=="__new__"&&!teamDrop&&(
+                      <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",cursor:"pointer",fontSize:14,color:"#94a3b8"}}
+                        onClick={()=>{setSelTeam("");setTeamSearch("");setTeamDrop(true);}}>✕</span>
+                    )}
+                    {teamDrop&&(
+                      <div style={{position:"absolute",top:"100%",left:0,right:0,zIndex:50,background:"#fff",border:"1.5px solid #e2e8f0",borderRadius:10,marginTop:4,maxHeight:220,overflowY:"auto",boxShadow:"0 8px 24px rgba(0,0,0,.1)"}}>
+                        <div onClick={()=>{setSelTeam("");setTeamSearch("");setTeamDrop(false);setCustomFolder("");}}
+                          style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",cursor:"pointer",borderBottom:"1px solid #f1f5f9"}}
+                          onMouseEnter={e=>e.currentTarget.style.background="#f8fafc"}
+                          onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                          <span style={{fontSize:14}}>📂</span>
+                          <span style={{fontSize:13,fontWeight:500,color:"#64748b"}}>General (default)</span>
+                        </div>
+                        {filteredFolders.map(f=>(
+                          <div key={f.id} onClick={()=>{setSelTeam(f.name);setTeamSearch("");setTeamDrop(false);setCustomFolder("");}}
+                            style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",cursor:"pointer",borderBottom:"1px solid #f1f5f9"}}
+                            onMouseEnter={e=>e.currentTarget.style.background="#eff6ff"}
+                            onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                            <span style={{fontSize:14}}>{f.type==="team"?"👥":"📁"}</span>
+                            <div style={{flex:1,minWidth:0}}>
+                              <p style={{margin:0,fontSize:13,fontWeight:600,color:"#1e293b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.label}</p>
+                            </div>
+                          </div>
+                        ))}
+                        {filteredFolders.length===0&&!teamSearch&&<div style={{padding:"10px 14px",fontSize:12,color:"#94a3b8"}}>No teams loaded</div>}
+                        <div onClick={()=>{setSelTeam("__new__");setTeamSearch("");setTeamDrop(false);}}
+                          style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",cursor:"pointer",borderTop:"1.5px solid #e2e8f0",background:"#f8fafc"}}
+                          onMouseEnter={e=>e.currentTarget.style.background="#eff6ff"}
+                          onMouseLeave={e=>e.currentTarget.style.background="#f8fafc"}>
+                          <span style={{fontSize:14,color:"#0078d4"}}>+</span>
+                          <span style={{fontSize:13,fontWeight:600,color:"#0078d4"}}>Create new folder</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   {selTeam==="__new__"&&(
                     <input className="field" style={{marginTop:8}} value={customFolder} onChange={e=>setCustomFolder(e.target.value)}
                       placeholder="Enter new folder name…" autoFocus/>
                   )}
-                  {(selTeam&&selTeam!=="__new__")&&(
+                  {selTeam&&selTeam!=="__new__"&&!teamDrop&&(
                     <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8,padding:"8px 12px",background:"#fefce8",borderRadius:8,border:"1.5px solid #fde68a"}}>
                       <span style={{fontSize:16}}>📁</span>
                       <span style={{fontSize:13,fontWeight:600,color:"#854d0e"}}>{selTeam}</span>
