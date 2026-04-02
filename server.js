@@ -5,15 +5,28 @@ const fetch = require("node-fetch");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ── Supabase config (set these as Render environment variables) ──
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
+
+function sbHeaders() {
+  return {
+    apikey: SUPABASE_KEY,
+    Authorization: `Bearer ${SUPABASE_KEY}`,
+    "Content-Type": "application/json",
+    Prefer: "return=representation",
+  };
+}
+
 app.use(cors({
   origin: "*",
-  methods: ["GET", "POST", "OPTIONS"],
+  methods: ["GET", "POST", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "x-ado-token", "Authorization"],
 }));
 app.options("*", cors());
-app.use(express.json());
+app.use(express.json({ limit: "5mb" }));
 
-app.get("/", (req, res) => res.json({ status: "ok", service: "Azure DevOps Proxy" }));
+app.get("/", (req, res) => res.json({ status: "ok", service: "Azure DevOps Proxy + Supabase" }));
 
 // GET /members?org=Sogolytics
 app.get("/members", async (req, res) => {
@@ -88,6 +101,49 @@ app.get("/members", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// ── Supabase File endpoints ──────────────────────────────────────────────
+
+// GET /files — list all skill files (newest first)
+app.get("/files", async (req, res) => {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return res.status(500).json({ error: "SUPABASE_URL or SUPABASE_KEY not configured" });
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/skill_files?order=uploaded_at.desc`, { headers: sbHeaders() });
+    if (!r.ok) { const t = await r.text(); return res.status(r.status).json({ error: t }); }
+    const rows = await r.json();
+    return res.json({ files: rows, count: rows.length });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /files — upload a new skill file
+app.post("/files", async (req, res) => {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return res.status(500).json({ error: "SUPABASE_URL or SUPABASE_KEY not configured" });
+  const { id, filename, title, description, uploader, email, size, uploaded_at, content } = req.body;
+  if (!id || !filename || !uploader || !content) return res.status(400).json({ error: "Missing required fields: id, filename, uploader, content" });
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/skill_files`, {
+      method: "POST",
+      headers: sbHeaders(),
+      body: JSON.stringify({ id, filename, title, description, uploader, email, size, uploaded_at, content }),
+    });
+    if (!r.ok) { const t = await r.text(); return res.status(r.status).json({ error: t }); }
+    const rows = await r.json();
+    return res.json(rows[0]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// DELETE /files/:id — delete a skill file
+app.delete("/files/:id", async (req, res) => {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return res.status(500).json({ error: "SUPABASE_URL or SUPABASE_KEY not configured" });
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/skill_files?id=eq.${encodeURIComponent(req.params.id)}`, {
+      method: "DELETE",
+      headers: sbHeaders(),
+    });
+    if (!r.ok) { const t = await r.text(); return res.status(r.status).json({ error: t }); }
+    return res.json({ deleted: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.listen(PORT, () => console.log(`Proxy running on port ${PORT}`));

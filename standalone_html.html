@@ -67,9 +67,10 @@ const fs  = b => b<1024?b+"B":b<1048576?(b/1024).toFixed(1)+"KB":(b/1048576).toF
 
 function App() {
   const [tab,      setTab]      = useState("upload");
-  const [files,    setFiles]    = useState(()=> JSON.parse(localStorage.getItem("sf")||"[]"));
+  const [files,    setFiles]    = useState([]);
   const [members,  setMembers]  = useState(()=> JSON.parse(localStorage.getItem("sm")||"[]"));
   const [fetching, setFetching] = useState(false);
+  const [loadingFiles, setLoadingFiles] = useState(false);
   const [search,   setSearch]   = useState("");
   const [preview,  setPreview]  = useState(null);
   const [toast,    setToast]    = useState(null);
@@ -99,8 +100,23 @@ function App() {
     setFetching(false);
   }, [toast_]);
 
+  const loadFiles = useCallback(async () => {
+    setLoadingFiles(true);
+    try {
+      const r = await fetch(`${PROXY}/files`);
+      if (!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error||`HTTP ${r.status}`); }
+      const d = await r.json();
+      setFiles((d.files||[]).map(f=>({
+        id:f.id, filename:f.filename, title:f.title, desc:f.description,
+        uploader:f.uploader, email:f.email, size:f.size, ts:f.uploaded_at, content:f.content
+      })));
+    } catch(e){ toast_(`Files: ${e.message}`,"error"); }
+    setLoadingFiles(false);
+  }, [toast_]);
+
   useEffect(()=>{
     if (members.length === 0) loadMembers();
+    loadFiles();
   }, []);  // eslint-disable-line
 
   const pickFile = f => {
@@ -112,18 +128,22 @@ function App() {
   const upload = async () => {
     if (!selFile||!selMem||uploading) return;
     setUploading(true);
-    const content = await selFile.text();
-    const entry = {
-      id:`${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      filename:selFile.name, title:title.trim()||selFile.name.replace(".md",""),
-      desc:desc.trim(), uploader:selMem.displayName,
-      email:selMem.email||"", size:selFile.size, ts:Date.now(), content
-    };
-    const updated = [entry,...files];
-    setFiles(updated);
-    localStorage.setItem("sf", JSON.stringify(updated));
-    setTab("browse"); setTitle(""); setDesc(""); setSelFile(null); setSelMem(null);
-    toast_(`${selFile.name} uploaded`);
+    try {
+      const content = await selFile.text();
+      const body = {
+        id:`${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        filename:selFile.name, title:title.trim()||selFile.name.replace(".md",""),
+        description:desc.trim(), uploader:selMem.displayName,
+        email:selMem.email||"", size:selFile.size, uploaded_at:Date.now(), content
+      };
+      const r = await fetch(`${PROXY}/files`,{
+        method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)
+      });
+      if (!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error||`HTTP ${r.status}`); }
+      await loadFiles();
+      setTab("browse"); setTitle(""); setDesc(""); setSelFile(null); setSelMem(null);
+      toast_(`${selFile.name} uploaded`);
+    } catch(e){ toast_(`Upload failed: ${e.message}`,"error"); }
     setUploading(false);
   };
 
