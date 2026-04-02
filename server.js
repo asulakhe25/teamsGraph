@@ -5,8 +5,16 @@ const fetch = require("node-fetch");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Allow requests from anywhere (artifact, your domain, etc.)
-app.use(cors());
+// Explicitly allow claude.ai and all origins
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "x-ado-token", "Authorization"],
+}));
+
+// Handle preflight OPTIONS requests
+app.options("*", cors());
+
 app.use(express.json());
 
 // Health check
