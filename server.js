@@ -103,6 +103,46 @@ app.get("/members", async (req, res) => {
   }
 });
 
+// GET /teams?org=Sogolytics — list ADO project teams
+app.get("/teams", async (req, res) => {
+  const org = req.query.org || "Sogolytics";
+  const pat = req.headers["x-ado-token"] || process.env.ADO_PAT;
+  if (!pat) return res.status(401).json({ error: "Missing x-ado-token header or ADO_PAT env var" });
+
+  const b64 = Buffer.from(`:${pat}`).toString("base64");
+  const headers = { Authorization: `Basic ${b64}`, "Content-Type": "application/json" };
+
+  async function adoFetch(url) {
+    const r = await fetch(url, { headers, redirect: "manual" });
+    if (r.status >= 300 && r.status < 400) return { ok: false, status: r.status, error: "Redirected to login — PAT is invalid or expired" };
+    const text = await r.text();
+    if (text.trim().startsWith("<")) return { ok: false, status: r.status, error: `PAT rejected (${r.status})` };
+    if (!r.ok) return { ok: false, status: r.status, error: `Azure DevOps error ${r.status}: ${text.slice(0, 200)}` };
+    return { ok: true, data: JSON.parse(text) };
+  }
+
+  try {
+    // Get all projects
+    const r1 = await adoFetch(`https://dev.azure.com/${org}/_apis/projects?api-version=7.1`);
+    if (!r1.ok) return res.status(r1.status).json({ error: r1.error });
+
+    const projects = r1.data.value || [];
+    const teams = [];
+
+    // Get teams for each project
+    for (const proj of projects) {
+      const r2 = await adoFetch(`https://dev.azure.com/${org}/_apis/projects/${proj.id}/teams?api-version=7.1`);
+      if (r2.ok) {
+        for (const t of (r2.data.value || [])) {
+          teams.push({ id: t.id, name: t.name, project: proj.name });
+        }
+      }
+    }
+
+    return res.json({ teams, count: teams.length });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // ── Supabase File endpoints ──────────────────────────────────────────────
 
 // GET /files — list all skill files (newest first)
@@ -119,13 +159,13 @@ app.get("/files", async (req, res) => {
 // POST /files — upload a new skill file
 app.post("/files", async (req, res) => {
   if (!SUPABASE_URL || !SUPABASE_KEY) return res.status(500).json({ error: "SUPABASE_URL or SUPABASE_KEY not configured" });
-  const { id, filename, title, description, uploader, email, size, uploaded_at, content } = req.body;
+  const { id, filename, title, description, uploader, email, size, uploaded_at, content, folder } = req.body;
   if (!id || !filename || !uploader || !content) return res.status(400).json({ error: "Missing required fields: id, filename, uploader, content" });
   try {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/skill_files`, {
       method: "POST",
       headers: sbHeaders(),
-      body: JSON.stringify({ id, filename, title, description, uploader, email, size, uploaded_at, content }),
+      body: JSON.stringify({ id, filename, title, description, uploader, email, size, uploaded_at, content, folder: folder || "General" }),
     });
     if (!r.ok) { const t = await r.text(); return res.status(r.status).json({ error: t }); }
     const rows = await r.json();

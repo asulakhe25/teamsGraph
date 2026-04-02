@@ -69,18 +69,36 @@ function App() {
   const [tab,      setTab]      = useState("upload");
   const [files,    setFiles]    = useState([]);
   const [members,  setMembers]  = useState(()=> JSON.parse(localStorage.getItem("sm")||"[]"));
+  const [teams,    setTeams]    = useState(()=> JSON.parse(localStorage.getItem("st")||"[]"));
   const [fetching, setFetching] = useState(false);
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [search,   setSearch]   = useState("");
   const [preview,  setPreview]  = useState(null);
   const [toast,    setToast]    = useState(null);
   const [selMem,   setSelMem]   = useState(null);
+  const [memSearch, setMemSearch] = useState("");
+  const [memDrop,  setMemDrop]  = useState(false);
+  const [selTeam,  setSelTeam]  = useState("");
+  const [customFolder, setCustomFolder] = useState("");
+  const [browseFolder, setBrowseFolder] = useState("All");
   const [title,    setTitle]    = useState("");
   const [desc,     setDesc]     = useState("");
   const [selFile,  setSelFile]  = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const [uploading,setUploading]= useState(false);
   const fileRef = useRef();
+  const memRef  = useRef();
+
+  const filteredMembers = members.filter(m=>{
+    const q=memSearch.toLowerCase();
+    return !q||m.displayName.toLowerCase().includes(q)||(m.email||"").toLowerCase().includes(q);
+  });
+
+  useEffect(()=>{
+    const handler = e=>{ if (memRef.current && !memRef.current.contains(e.target)) setMemDrop(false); };
+    document.addEventListener("mousedown",handler);
+    return ()=>document.removeEventListener("mousedown",handler);
+  },[]);
 
   const toast_ = useCallback((msg, sev="success") => {
     setToast({msg,sev}); setTimeout(()=>setToast(null),3500);
@@ -100,6 +118,17 @@ function App() {
     setFetching(false);
   }, [toast_]);
 
+  const loadTeams = useCallback(async () => {
+    try {
+      const r = await fetch(`${PROXY}/teams?org=${ORG}`);
+      if (!r.ok) return;
+      const d = await r.json();
+      const t = d.teams||[];
+      setTeams(t);
+      localStorage.setItem("st", JSON.stringify(t));
+    } catch(e){}
+  }, []);
+
   const loadFiles = useCallback(async () => {
     setLoadingFiles(true);
     try {
@@ -108,7 +137,8 @@ function App() {
       const d = await r.json();
       setFiles((d.files||[]).map(f=>({
         id:f.id, filename:f.filename, title:f.title, desc:f.description,
-        uploader:f.uploader, email:f.email, size:f.size, ts:f.uploaded_at, content:f.content
+        uploader:f.uploader, email:f.email, size:f.size, ts:f.uploaded_at, content:f.content,
+        folder:f.folder||"General"
       })));
     } catch(e){ toast_(`Files: ${e.message}`,"error"); }
     setLoadingFiles(false);
@@ -116,6 +146,7 @@ function App() {
 
   useEffect(()=>{
     if (members.length === 0) loadMembers();
+    if (teams.length === 0) loadTeams();
     loadFiles();
   }, []);  // eslint-disable-line
 
@@ -134,14 +165,15 @@ function App() {
         id:`${Date.now()}-${Math.random().toString(36).slice(2)}`,
         filename:selFile.name, title:title.trim()||selFile.name.replace(".md",""),
         description:desc.trim(), uploader:selMem.displayName,
-        email:selMem.email||"", size:selFile.size, uploaded_at:Date.now(), content
+        email:selMem.email||"", size:selFile.size, uploaded_at:Date.now(), content,
+        folder:(selTeam==="__new__"?customFolder.trim():selTeam)||"General"
       };
       const r = await fetch(`${PROXY}/files`,{
         method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)
       });
       if (!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error||`HTTP ${r.status}`); }
       await loadFiles();
-      setTab("browse"); setTitle(""); setDesc(""); setSelFile(null); setSelMem(null);
+      setTab("browse"); setTitle(""); setDesc(""); setSelFile(null); setSelMem(null); setSelTeam(""); setCustomFolder("");
       toast_(`${selFile.name} uploaded`);
     } catch(e){ toast_(`Upload failed: ${e.message}`,"error"); }
     setUploading(false);
@@ -155,9 +187,11 @@ function App() {
   };
 
   const filtered = files.filter(f=>{
+    if (browseFolder!=="All" && f.folder!==browseFolder) return false;
     const q=search.toLowerCase();
-    return !q||[f.filename,f.uploader,f.content,f.title||"",f.desc||""].some(s=>s.toLowerCase().includes(q));
+    return !q||[f.filename,f.uploader,f.content,f.title||"",f.desc||"",f.folder||""].some(s=>s.toLowerCase().includes(q));
   });
+  const folders = ["All",...[...new Set(files.map(f=>f.folder||"General"))].sort()];
 
   const uniq = new Set(files.map(f=>f.uploader)).size;
   const ready = selMem && selFile;
@@ -211,19 +245,77 @@ function App() {
               </div>
             ):(
               <>
-                <div style={{marginBottom:16}}>
+                <div style={{marginBottom:16}} ref={memRef}>
                   <span className="lbl">Select team member</span>
-                  <select className="field" value={selMem?.id||""} onChange={e=>setSelMem(members.find(x=>x.id===e.target.value)||null)}>
-                    <option value="">— Choose from Azure DevOps —</option>
-                    {members.map(m=><option key={m.id} value={m.id}>{m.displayName}{m.email?` (${m.email})`:""}</option>)}
-                  </select>
-                  {selMem&&(
+                  <div style={{position:"relative"}}>
+                    <input className="field" placeholder="Search members by name or email…"
+                      value={selMem&&!memDrop ? selMem.displayName : memSearch}
+                      onFocus={()=>{setMemDrop(true);if(selMem)setMemSearch("");}}
+                      onChange={e=>{setMemSearch(e.target.value);setMemDrop(true);if(selMem){setSelMem(null);}}}
+                      style={{paddingRight:selMem?36:14}}/>
+                    {selMem&&!memDrop&&(
+                      <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",cursor:"pointer",fontSize:14,color:"#94a3b8"}}
+                        onClick={()=>{setSelMem(null);setMemSearch("");setMemDrop(true);}}>✕</span>
+                    )}
+                    {memDrop&&(
+                      <div style={{position:"absolute",top:"100%",left:0,right:0,zIndex:50,background:"#fff",border:"1.5px solid #e2e8f0",borderRadius:10,marginTop:4,maxHeight:220,overflowY:"auto",boxShadow:"0 8px 24px rgba(0,0,0,.1)"}}>
+                        {filteredMembers.length===0&&<div style={{padding:"12px 14px",fontSize:13,color:"#94a3b8"}}>No members found</div>}
+                        {filteredMembers.map(m=>{
+                          const {bg,c}=ac(m.displayName);
+                          return (
+                            <div key={m.id} onClick={()=>{setSelMem(m);setMemSearch("");setMemDrop(false);}}
+                              style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",cursor:"pointer",transition:"background .1s",borderBottom:"1px solid #f1f5f9"}}
+                              onMouseEnter={e=>e.currentTarget.style.background="#eff6ff"}
+                              onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                              <div className="avatar" style={{width:32,height:32,fontSize:11,background:bg,color:c}}>{ini(m.displayName)}</div>
+                              <div style={{flex:1,minWidth:0}}>
+                                <p style={{margin:0,fontSize:13,fontWeight:600,color:"#1e293b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.displayName}</p>
+                                {m.email&&<p style={{margin:0,fontSize:11,color:"#64748b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.email}</p>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  {selMem&&!memDrop&&(
                     <div style={{display:"flex",alignItems:"center",gap:10,marginTop:10,padding:"10px 14px",background:"#eff6ff",borderRadius:10,border:"1.5px solid #bfdbfe"}}>
                       <div className="avatar" style={{width:36,height:36,fontSize:12,background:ac(selMem.displayName).bg,color:ac(selMem.displayName).c}}>{ini(selMem.displayName)}</div>
                       <div>
                         <p style={{margin:0,fontSize:13,fontWeight:600,color:"#1e293b"}}>{selMem.displayName}</p>
                         <p style={{margin:0,fontSize:11,color:"#0369a1"}}>{selMem.email||"Azure DevOps member"}</p>
                       </div>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{marginBottom:16}}>
+                  <span className="lbl">Team / Folder</span>
+                  <div style={{display:"flex",gap:8}}>
+                    <select className="field" style={{flex:1}} value={selTeam} onChange={e=>{setSelTeam(e.target.value);setCustomFolder("");}}>
+                      <option value="">General</option>
+                      {teams.map(t=><option key={t.id} value={t.name}>{t.name}{t.project?` (${t.project})`:""}</option>)}
+                      {/* Show existing custom folders from files */}
+                      {[...new Set(files.map(f=>f.folder).filter(f=>f&&f!=="General"&&!teams.some(t=>t.name===f)))].map(f=>(
+                        <option key={f} value={f}>{f}</option>
+                      ))}
+                      <option value="__new__">+ Create new folder</option>
+                    </select>
+                  </div>
+                  {selTeam==="__new__"&&(
+                    <input className="field" style={{marginTop:8}} value={customFolder} onChange={e=>setCustomFolder(e.target.value)}
+                      placeholder="Enter new folder name…" autoFocus/>
+                  )}
+                  {(selTeam&&selTeam!=="__new__")&&(
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8,padding:"8px 12px",background:"#fefce8",borderRadius:8,border:"1.5px solid #fde68a"}}>
+                      <span style={{fontSize:16}}>📁</span>
+                      <span style={{fontSize:13,fontWeight:600,color:"#854d0e"}}>{selTeam}</span>
+                    </div>
+                  )}
+                  {selTeam==="__new__"&&customFolder.trim()&&(
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8,padding:"8px 12px",background:"#ecfdf5",borderRadius:8,border:"1.5px solid #a7f3d0"}}>
+                      <span style={{fontSize:16}}>📁</span>
+                      <span style={{fontSize:13,fontWeight:600,color:"#065f46"}}>{customFolder.trim()} (new)</span>
                     </div>
                   )}
                 </div>
@@ -286,6 +378,19 @@ function App() {
         {/* Browse */}
         {tab==="browse"&&(
           <div className="section">
+            {folders.length>2&&(
+              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
+                {folders.map(f=>(
+                  <button key={f} onClick={()=>setBrowseFolder(f)}
+                    style={{padding:"5px 14px",borderRadius:20,border:"1.5px solid",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif",
+                      background:browseFolder===f?"#0078d4":"#f8fafc",
+                      color:browseFolder===f?"#fff":"#64748b",
+                      borderColor:browseFolder===f?"#0078d4":"#e2e8f0"}}>
+                    {f==="All"?`All (${files.length})`:`📁 ${f}`}
+                  </button>
+                ))}
+              </div>
+            )}
             <div style={{position:"relative",marginBottom:16}}>
               <span style={{position:"absolute",left:13,top:"50%",transform:"translateY(-50%)",color:"#94a3b8",fontSize:16}}>⌕</span>
               <input className="field" value={search} onChange={e=>setSearch(e.target.value)}
@@ -312,6 +417,7 @@ function App() {
                       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
                         <span style={{fontSize:14,fontWeight:600,color:"#1e293b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.title||f.filename}</span>
                         <span className="badge">MD</span>
+                        {f.folder&&f.folder!=="General"&&<span style={{fontSize:11,padding:"2px 8px",borderRadius:20,fontWeight:600,background:"#fefce8",color:"#854d0e"}}>📁 {f.folder}</span>}
                       </div>
                       {f.desc&&<p style={{fontSize:12,color:"#475569",margin:"0 0 3px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.desc}</p>}
                       <div className="meta">
