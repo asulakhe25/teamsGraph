@@ -18,8 +18,8 @@ app.get("/", (req, res) => res.json({ status: "ok", service: "Azure DevOps Proxy
 // GET /members?org=Sogolytics
 app.get("/members", async (req, res) => {
   const org = req.query.org || "Sogolytics";
-  const pat = req.headers["x-ado-token"];
-  if (!pat) return res.status(401).json({ error: "Missing x-ado-token header" });
+  const pat = req.headers["x-ado-token"] || process.env.ADO_PAT;
+  if (!pat) return res.status(401).json({ error: "Missing x-ado-token header or ADO_PAT env var" });
 
   const b64 = Buffer.from(`:${pat}`).toString("base64");
   const headers = { Authorization: `Basic ${b64}`, "Content-Type": "application/json" };

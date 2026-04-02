@@ -58,7 +58,6 @@ const { useState, useEffect, useRef, useCallback } = React;
 
 const PROXY  = "https://teamsgraph.onrender.com";
 const ORG    = "Sogolytics";
-const PAT    = "8tcdQx4VPrpzLP4U1COQBDay1eMVqu5HN0Bq8d8WClIPcas8Txy2JQQJ99CDACAAAAAaEGkrAAASAZDO3yU5";
 
 const AC = [{bg:"#f3f0ff",c:"#6d28d9"},{bg:"#ecfdf5",c:"#065f46"},{bg:"#fff7ed",c:"#9a3412"},{bg:"#eff6ff",c:"#1e40af"},{bg:"#fdf4ff",c:"#86198f"},{bg:"#fefce8",c:"#854d0e"}];
 const ac  = n => AC[n.split("").reduce((a,x)=>a+x.charCodeAt(0),0)%AC.length];
@@ -89,7 +88,7 @@ function App() {
   const loadMembers = useCallback(async () => {
     setFetching(true);
     try {
-      const r = await fetch(`${PROXY}/members?org=${ORG}`,{ headers:{"x-ado-token":PAT} });
+      const r = await fetch(`${PROXY}/members?org=${ORG}`);
       if (!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error||`HTTP ${r.status}`); }
       const d = await r.json();
       const m = d.members||[];
