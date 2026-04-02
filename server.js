@@ -24,32 +24,31 @@ app.get("/members", async (req, res) => {
   const b64 = Buffer.from(`:${pat}`).toString("base64");
   const headers = { Authorization: `Basic ${b64}`, "Content-Type": "application/json" };
 
-  try {
-    // Try 1: Core Members API (works with basic PAT, no Graph scope needed)
-    const r1 = await fetch(
-      `https://dev.azure.com/${org}/_apis/projects?api-version=7.1`,
-      { headers }
-    );
-
-    if (!r1.ok) {
-      const text = await r1.text();
-      const isHtml = text.trim().startsWith("<");
-      return res.status(r1.status).json({
-        error: isHtml
-          ? `PAT rejected by Azure DevOps (${r1.status}) — check PAT is valid and not expired`
-          : `Azure DevOps error ${r1.status}: ${text.slice(0, 200)}`
-      });
+  // Helper: fetch as text, reject HTML login redirects
+  async function adoFetch(url) {
+    const r = await fetch(url, { headers, redirect: "manual" });
+    if (r.status >= 300 && r.status < 400) {
+      return { ok: false, status: r.status, error: "Redirected to login — PAT is invalid or expired" };
     }
+    const text = await r.text();
+    if (text.trim().startsWith("<")) {
+      return { ok: false, status: r.status, error: `PAT rejected by Azure DevOps (${r.status})` };
+    }
+    if (!r.ok) {
+      return { ok: false, status: r.status, error: `Azure DevOps error ${r.status}: ${text.slice(0, 200)}` };
+    }
+    return { ok: true, status: r.status, data: JSON.parse(text) };
+  }
 
-    // Try 2: Get members via Teams API
-    const r2 = await fetch(
-      `https://vssps.dev.azure.com/${org}/_apis/graph/users?api-version=7.1-preview.1`,
-      { headers }
-    );
+  try {
+    // Validate PAT with projects API
+    const r1 = await adoFetch(`https://dev.azure.com/${org}/_apis/projects?api-version=7.1`);
+    if (!r1.ok) return res.status(r1.status).json({ error: r1.error });
 
+    // Try 1: Graph Users API
+    const r2 = await adoFetch(`https://vssps.dev.azure.com/${org}/_apis/graph/users?api-version=7.1-preview.1`);
     if (r2.ok) {
-      const data = await r2.json();
-      const members = (data.value || [])
+      const members = (r2.data.value || [])
         .filter(u => u.subjectKind === "user" && u.displayName && !u.displayName.includes("\\"))
         .map(u => ({
           id: u.descriptor,
@@ -59,23 +58,10 @@ app.get("/members", async (req, res) => {
       return res.json({ members, count: members.length, source: "graph" });
     }
 
-    // Fallback: Get members via Connection Data (works with Member Read scope)
-    const r3 = await fetch(
-      `https://app.vssps.visualstudio.com/_apis/connectiondata`,
-      { headers }
-    );
-    const cd = await r3.json();
-    const self = cd.authenticatedUser;
-
-    // Get org members via REST
-    const r4 = await fetch(
-      `https://vsaex.dev.azure.com/${org}/_apis/userentitlements?api-version=7.1-preview.3`,
-      { headers }
-    );
-
+    // Try 2: User Entitlements API
+    const r4 = await adoFetch(`https://vsaex.dev.azure.com/${org}/_apis/userentitlements?api-version=7.1-preview.3`);
     if (r4.ok) {
-      const data = await r4.json();
-      const members = (data.members || data.value || []).map(u => ({
+      const members = (r4.data.members || r4.data.value || []).map(u => ({
         id: u.id || u.user?.subjectDescriptor || u.user?.principalName,
         displayName: u.user?.displayName || u.user?.principalName || "Unknown",
         email: u.user?.mailAddress || u.user?.principalName || "",
@@ -83,7 +69,15 @@ app.get("/members", async (req, res) => {
       return res.json({ members, count: members.length, source: "entitlements" });
     }
 
-    // Last resort: return just the PAT owner
+    // Last resort: PAT owner from Connection Data
+    const r3 = await adoFetch(`https://app.vssps.visualstudio.com/_apis/connectiondata`);
+    if (!r3.ok) {
+      return res.status(401).json({
+        error: "PAT is valid but lacks required scopes. Regenerate your PAT with: Graph > Read, Member Entitlement Management > Read"
+      });
+    }
+    const self = r3.data.authenticatedUser;
+
     return res.json({
       members: [{ id: self?.subjectDescriptor || "self", displayName: self?.providerDisplayName || "You", email: self?.mailAddress || "" }],
       count: 1,
