@@ -66,7 +66,7 @@ const fd  = d => new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"sh
 const fs  = b => b<1024?b+"B":b<1048576?(b/1024).toFixed(1)+"KB":(b/1048576).toFixed(1)+"MB";
 
 function App() {
-  const [tab,      setTab]      = useState("upload");
+  const [tab,      setTab]      = useState("browse");
   const [files,    setFiles]    = useState([]);
   const [members,  setMembers]  = useState(()=> JSON.parse(localStorage.getItem("sm")||"[]"));
   const [teams,    setTeams]    = useState(()=> JSON.parse(localStorage.getItem("st")||"[]"));
