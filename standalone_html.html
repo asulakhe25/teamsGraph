@@ -203,6 +203,19 @@ function App() {
     toast_(`Downloaded ${f.filename}`);
   };
 
+  const deleteFile = async (f) => {
+    const pwd = prompt(`Enter password to delete "${f.title||f.filename}":`);
+    if (pwd === null) return;
+    if (pwd !== "delete234"){ toast_("Incorrect password","error"); return; }
+    try {
+      const r = await fetch(`${PROXY}/files/${f.id}`,{method:"DELETE"});
+      if (!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error||`HTTP ${r.status}`); }
+      if (preview?.id===f.id) setPreview(null);
+      await loadFiles();
+      toast_(`Deleted ${f.filename}`);
+    } catch(e){ toast_(`Delete failed: ${e.message}`,"error"); }
+  };
+
   const filtered = files.filter(f=>{
     if (browseFolder!=="All" && f.folder!==browseFolder) return false;
     const q=search.toLowerCase();
@@ -474,11 +487,26 @@ function App() {
                         <span className="dot"/><span>{fs(f.size)}</span>
                       </div>
                     </div>
-                    <div style={{display:"flex",gap:8,flexShrink:0}}>
-                      <button className={`btn ${open?"btn-outline":"btn-ghost"}`} onClick={()=>setPreview(open?null:f)}>
-                        {open?"Hide":"Preview"}
+                    <div style={{display:"flex",gap:6,flexShrink:0}}>
+                      <button className={`btn ${open?"btn-outline":"btn-ghost"}`} onClick={()=>setPreview(open?null:f)} title={open?"Hide preview":"Preview"}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          {open
+                            ? <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></>
+                            : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>}
+                        </svg>
                       </button>
-                      <button className="btn btn-blue" onClick={()=>download(f)}>Download</button>
+                      <button className="btn btn-ghost" onClick={()=>download(f)} title="Download">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                      </button>
+                      <button className="btn btn-ghost" onClick={()=>deleteFile(f)} title="Delete" style={{borderColor:"#fecaca",color:"#dc2626"}}
+                        onMouseEnter={e=>{e.currentTarget.style.background="#fef2f2";e.currentTarget.style.borderColor="#f87171";}}
+                        onMouseLeave={e=>{e.currentTarget.style.background="#f8fafc";e.currentTarget.style.borderColor="#fecaca";}}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                        </svg>
+                      </button>
                     </div>
                   </div>
                   {open&&<div style={{padding:"0 18px 16px"}}><pre className="pre">{f.content}</pre></div>}
