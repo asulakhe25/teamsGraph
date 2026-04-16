@@ -159,13 +159,13 @@ app.get("/files", async (req, res) => {
 // POST /files — upload a new skill file
 app.post("/files", async (req, res) => {
   if (!SUPABASE_URL || !SUPABASE_KEY) return res.status(500).json({ error: "SUPABASE_URL or SUPABASE_KEY not configured" });
-  const { id, filename, title, description, uploader, email, size, uploaded_at, content, folder } = req.body;
+  const { id, filename, title, description, uploader, email, size, uploaded_at, content, folder, category } = req.body;
   if (!id || !filename || !uploader || !content) return res.status(400).json({ error: "Missing required fields: id, filename, uploader, content" });
   try {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/skill_files`, {
       method: "POST",
       headers: sbHeaders(),
-      body: JSON.stringify({ id, filename, title, description, uploader, email, size, uploaded_at, content, folder: folder || "General" }),
+      body: JSON.stringify({ id, filename, title, description, uploader, email, size, uploaded_at, content, folder: folder || "General", category: category || "" }),
     });
     if (!r.ok) { const t = await r.text(); return res.status(r.status).json({ error: t }); }
     const rows = await r.json();

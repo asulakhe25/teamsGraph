@@ -60,6 +60,13 @@ const PROXY  = "https://teamsgraph.onrender.com";
 const ORG    = "Sogolytics";
 
 const AC = [{bg:"#f3f0ff",c:"#6d28d9"},{bg:"#ecfdf5",c:"#065f46"},{bg:"#fff7ed",c:"#9a3412"},{bg:"#eff6ff",c:"#1e40af"},{bg:"#fdf4ff",c:"#86198f"},{bg:"#fefce8",c:"#854d0e"}];
+const CATEGORIES = [
+  {id:"bug-fix",     label:"Bug Fix",      icon:"🐛", bg:"#fef2f2", c:"#991b1b", border:"#fecaca"},
+  {id:"code",        label:"Code",         icon:"💻", bg:"#eff6ff", c:"#1e40af", border:"#bfdbfe"},
+  {id:"ui-skill",    label:"UI Skill",     icon:"🎨", bg:"#f3f0ff", c:"#6d28d9", border:"#ddd6fe"},
+  {id:"design-skill",label:"Design Skill", icon:"✨", bg:"#ecfdf5", c:"#065f46", border:"#a7f3d0"},
+];
+const catBy = id => CATEGORIES.find(x=>x.id===id);
 const ac  = n => AC[n.split("").reduce((a,x)=>a+x.charCodeAt(0),0)%AC.length];
 const ini = n => n.trim().split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
 const fd  = d => new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
@@ -83,6 +90,8 @@ function App() {
   const [teamDrop, setTeamDrop] = useState(false);
   const [customFolder, setCustomFolder] = useState("");
   const [browseFolder, setBrowseFolder] = useState("All");
+  const [selCategory, setSelCategory] = useState("");
+  const [browseCategory, setBrowseCategory] = useState("All");
   const [title,    setTitle]    = useState("");
   const [desc,     setDesc]     = useState("");
   const [selFile,  setSelFile]  = useState(null);
@@ -155,7 +164,7 @@ function App() {
       setFiles((d.files||[]).map(f=>({
         id:f.id, filename:f.filename, title:f.title, desc:f.description,
         uploader:f.uploader, email:f.email, size:f.size, ts:f.uploaded_at, content:f.content,
-        folder:f.folder||"General"
+        folder:f.folder||"General", category:f.category||""
       })));
     } catch(e){ toast_(`Files: ${e.message}`,"error"); }
     setLoadingFiles(false);
@@ -183,14 +192,15 @@ function App() {
         filename:selFile.name, title:title.trim()||selFile.name.replace(".md",""),
         description:desc.trim(), uploader:selMem.displayName,
         email:selMem.email||"", size:selFile.size, uploaded_at:Date.now(), content,
-        folder:(selTeam==="__new__"?customFolder.trim():selTeam)||"General"
+        folder:(selTeam==="__new__"?customFolder.trim():selTeam)||"General",
+        category:selCategory||""
       };
       const r = await fetch(`${PROXY}/files`,{
         method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)
       });
       if (!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error||`HTTP ${r.status}`); }
       await loadFiles();
-      setTab("browse"); setTitle(""); setDesc(""); setSelFile(null); setSelMem(null); setSelTeam(""); setCustomFolder("");
+      setTab("browse"); setTitle(""); setDesc(""); setSelFile(null); setSelMem(null); setSelTeam(""); setCustomFolder(""); setSelCategory("");
       toast_(`${selFile.name} uploaded`);
     } catch(e){ toast_(`Upload failed: ${e.message}`,"error"); }
     setUploading(false);
@@ -218,8 +228,9 @@ function App() {
 
   const filtered = files.filter(f=>{
     if (browseFolder!=="All" && f.folder!==browseFolder) return false;
+    if (browseCategory!=="All" && f.category!==browseCategory) return false;
     const q=search.toLowerCase();
-    return !q||[f.filename,f.uploader,f.content,f.title||"",f.desc||"",f.folder||""].some(s=>s.toLowerCase().includes(q));
+    return !q||[f.filename,f.uploader,f.content,f.title||"",f.desc||"",f.folder||"",catBy(f.category)?.label||""].some(s=>s.toLowerCase().includes(q));
   });
   const folders = ["All",...[...new Set(files.map(f=>f.folder||"General"))].sort()];
 
@@ -385,6 +396,24 @@ function App() {
                   <input className="field" value={title} onChange={e=>setTitle(e.target.value)} placeholder="e.g. Frontend & React Skills"/>
                 </div>
                 <div style={{marginBottom:14}}>
+                  <span className="lbl">Skill category</span>
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                    {CATEGORIES.map(cat=>{
+                      const active = selCategory===cat.id;
+                      return (
+                        <button key={cat.id} type="button" onClick={()=>setSelCategory(active?"":cat.id)}
+                          style={{display:"inline-flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:20,
+                            border:`1.5px solid ${active?cat.c:cat.border}`,
+                            background:active?cat.bg:"#fff",
+                            color:active?cat.c:"#64748b",
+                            fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
+                          <span>{cat.icon}</span>{cat.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div style={{marginBottom:14}}>
                   <span className="lbl">Short description</span>
                   <textarea className="field" value={desc} onChange={e=>setDesc(e.target.value)} placeholder="Brief summary of skills covered" rows={2} style={{resize:"vertical",lineHeight:1.6}}/>
                 </div>
@@ -439,7 +468,7 @@ function App() {
         {tab==="browse"&&(
           <div className="section">
             {folders.length>2&&(
-              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
                 {folders.map(f=>(
                   <button key={f} onClick={()=>setBrowseFolder(f)}
                     style={{padding:"5px 14px",borderRadius:20,border:"1.5px solid",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif",
@@ -451,6 +480,28 @@ function App() {
                 ))}
               </div>
             )}
+            <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14,alignItems:"center"}}>
+              <span style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".06em",marginRight:4}}>Category:</span>
+              <button onClick={()=>setBrowseCategory("All")}
+                style={{padding:"4px 12px",borderRadius:20,border:"1.5px solid",fontSize:11.5,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif",
+                  background:browseCategory==="All"?"#1e293b":"#f8fafc",
+                  color:browseCategory==="All"?"#fff":"#64748b",
+                  borderColor:browseCategory==="All"?"#1e293b":"#e2e8f0"}}>All</button>
+              {CATEGORIES.map(cat=>{
+                const count = files.filter(f=>f.category===cat.id).length;
+                const active = browseCategory===cat.id;
+                return (
+                  <button key={cat.id} onClick={()=>setBrowseCategory(active?"All":cat.id)}
+                    style={{display:"inline-flex",alignItems:"center",gap:5,padding:"4px 12px",borderRadius:20,
+                      border:`1.5px solid ${active?cat.c:cat.border}`,
+                      background:active?cat.bg:"#fff",
+                      color:active?cat.c:"#64748b",
+                      fontSize:11.5,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                    <span>{cat.icon}</span>{cat.label}{count>0&&<span style={{opacity:.7}}>({count})</span>}
+                  </button>
+                );
+              })}
+            </div>
             <div style={{position:"relative",marginBottom:16}}>
               <span style={{position:"absolute",left:13,top:"50%",transform:"translateY(-50%)",color:"#94a3b8",fontSize:16}}>⌕</span>
               <input className="field" value={search} onChange={e=>setSearch(e.target.value)}
@@ -474,9 +525,14 @@ function App() {
                   <div style={{display:"flex",alignItems:"center",gap:14,padding:"16px 18px"}}>
                     <div className="avatar" style={{width:42,height:42,fontSize:13,background:bg,color:c}}>{ini(f.uploader)}</div>
                     <div style={{flex:1,minWidth:0}}>
-                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+                      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3,flexWrap:"wrap"}}>
                         <span style={{fontSize:14,fontWeight:600,color:"#1e293b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.title||f.filename}</span>
                         <span className="badge">MD</span>
+                        {(() => { const cat=catBy(f.category); return cat&&(
+                          <span style={{fontSize:11,padding:"2px 8px",borderRadius:20,fontWeight:600,background:cat.bg,color:cat.c,border:`1px solid ${cat.border}`,display:"inline-flex",alignItems:"center",gap:3}}>
+                            <span>{cat.icon}</span>{cat.label}
+                          </span>
+                        ); })()}
                         {f.folder&&f.folder!=="General"&&<span style={{fontSize:11,padding:"2px 8px",borderRadius:20,fontWeight:600,background:"#fefce8",color:"#854d0e"}}>📁 {f.folder}</span>}
                       </div>
                       {f.desc&&<p style={{fontSize:12,color:"#475569",margin:"0 0 3px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.desc}</p>}
