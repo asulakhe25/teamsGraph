@@ -7,106 +7,254 @@
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+:root{
+  --bg:#f8fafc;--card:#fff;--border:#e2e8f0;--border2:#f1f5f9;--text:#1e293b;--text2:#475569;
+  --text3:#64748b;--text4:#94a3b8;--blue:#0078d4;--blue2:#106ebe;--blue-bg:#eff6ff;--blue-border:#bfdbfe;
+  --hover:#69b3f5;--red:#dc2626;--red-bg:#fef2f2;--red-border:#fecaca;--green:#065f46;--green-bg:#ecfdf5;
+  --green-border:#a7f3d0;--yellow-bg:#fefce8;--yellow-c:#854d0e;--yellow-border:#fde68a;
+}
+[data-theme="dark"]{
+  --bg:#0f172a;--card:#1e293b;--border:#334155;--border2:#1e293b;--text:#f1f5f9;--text2:#cbd5e1;
+  --text3:#94a3b8;--text4:#64748b;--blue:#3b82f6;--blue2:#2563eb;--blue-bg:#1e3a5f;--blue-border:#1e40af;
+  --hover:#60a5fa;--red:#ef4444;--red-bg:#450a0a;--red-border:#7f1d1d;--green:#a7f3d0;--green-bg:#064e3b;
+  --green-border:#065f46;--yellow-bg:#422006;--yellow-c:#fde68a;--yellow-border:#854d0e;
+}
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Inter',sans-serif;background:#f8fafc;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);transition:background .3s,color .3s;}
 .wrap{min-height:100vh;padding:28px 20px;max-width:860px;margin:0 auto;}
 .header-card{background:linear-gradient(135deg,#0078d4,#106ebe);padding:28px;color:#fff;border-radius:16px;margin-bottom:20px;}
-.card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;}
+.card{background:var(--card);border-radius:16px;border:1px solid var(--border);transition:background .3s,border .3s;}
 .section{padding:24px;}
-.tab-bar{display:flex;gap:2px;background:#f1f5f9;border-radius:10px;padding:3px;width:fit-content;margin-bottom:20px;}
-.tab-btn{padding:8px 20px;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;}
-.tab-active{background:#fff;color:#0078d4;box-shadow:0 1px 3px rgba(0,0,0,.1);}
-.tab-inactive{background:transparent;color:#64748b;}
-.field{width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;outline:none;color:#1e293b;background:#fff;transition:border .15s;}
-.field:focus{border-color:#0078d4;box-shadow:0 0 0 3px rgba(0,120,212,.1);}
-.lbl{font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:block;}
+.tab-bar{display:flex;gap:2px;background:var(--border2);border-radius:10px;padding:3px;width:fit-content;margin-bottom:20px;}
+.tab-btn{padding:8px 20px;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;color:var(--text3);}
+.tab-active{background:var(--card);color:var(--blue);box-shadow:0 1px 3px rgba(0,0,0,.1);}
+.tab-inactive{background:transparent;}
+.field{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;outline:none;color:var(--text);background:var(--card);transition:border .15s,background .3s,color .3s;}
+.field:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,120,212,.1);}
+.lbl{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:block;}
 .avatar{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;flex-shrink:0;}
-.file-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;overflow:hidden;margin-bottom:10px;transition:border .15s,box-shadow .15s;}
-.file-card:hover{border-color:#69b3f5;box-shadow:0 4px 16px rgba(0,120,212,.08);}
-.file-card-open{border-color:#0078d4!important;}
+.file-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:10px;transition:border .15s,box-shadow .15s,background .3s;}
+.file-card:hover{border-color:var(--hover);box-shadow:0 4px 16px rgba(0,120,212,.08);}
+.file-card-open{border-color:var(--blue)!important;}
 .badge{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;background:#dbeafe;color:#1e40af;}
-.meta{font-size:12px;color:#94a3b8;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.meta{font-size:12px;color:var(--text4);display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
 .dot{width:3px;height:3px;border-radius:50%;background:#cbd5e1;flex-shrink:0;}
 .btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid;font-family:'Inter',sans-serif;transition:all .15s;}
-.btn-ghost{border-color:#e2e8f0;background:#f8fafc;color:#64748b;}
-.btn-ghost:hover{border-color:#69b3f5;background:#eff6ff;color:#0078d4;}
-.btn-blue{border-color:#0078d4;background:#0078d4;color:#fff;}
-.btn-blue:hover{background:#106ebe;}
-.btn-outline{border-color:#69b3f5;background:#eff6ff;color:#0078d4;}
-.drop{border:2px dashed #bfdbfe;border-radius:14px;padding:32px;text-align:center;cursor:pointer;background:#f8fafc;transition:all .15s;}
-.drop:hover,.drop-over{border-color:#0078d4;background:#eff6ff;}
-.pre{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;font-size:12px;line-height:1.8;font-family:monospace;max-height:300px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;margin-top:12px;}
-.toast{position:fixed;bottom:24px;right:24px;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,.12);animation:up .25s ease;}
+.btn-ghost{border-color:var(--border);background:var(--bg);color:var(--text3);}
+.btn-ghost:hover{border-color:var(--hover);background:var(--blue-bg);color:var(--blue);}
+.btn-blue{border-color:var(--blue);background:var(--blue);color:#fff;}
+.btn-blue:hover{background:var(--blue2);}
+.btn-outline{border-color:var(--hover);background:var(--blue-bg);color:var(--blue);}
+.btn-red{border-color:var(--red);background:var(--red);color:#fff;}
+.btn-red:hover{opacity:.85;}
+.drop{border:2px dashed var(--blue-border);border-radius:14px;padding:32px;text-align:center;cursor:pointer;background:var(--bg);transition:all .15s;}
+.drop:hover,.drop-over{border-color:var(--blue);background:var(--blue-bg);}
+.pre{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;font-size:12px;line-height:1.8;font-family:monospace;max-height:300px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;margin-top:12px;color:var(--text);}
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.12);animation:up .25s ease;}
 .t-ok{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;}
 .t-err{background:#fef2f2;color:#991b1b;border:1px solid #fecaca;}
 .t-inf{background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;}
-.empty{text-align:center;padding:48px 24px;border:2px dashed #e2e8f0;border-radius:14px;}
+.empty{text-align:center;padding:48px 24px;border:2px dashed var(--border);border-radius:14px;}
 .spin{animation:rot 1s linear infinite;}
-.bar{height:3px;background:#e2e8f0;border-radius:4px;overflow:hidden;margin-top:12px;}
+.bar{height:3px;background:var(--border);border-radius:4px;overflow:hidden;margin-top:12px;}
 .bar-fill{height:100%;background:linear-gradient(90deg,#0078d4,#50c0f0);border-radius:4px;animation:prog 1.5s ease-in-out infinite;}
+/* Modal overlay */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;animation:fadeIn .15s ease;}
+.modal{background:var(--card);border-radius:16px;border:1px solid var(--border);max-width:500px;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 48px rgba(0,0,0,.2);animation:scaleIn .2s ease;}
+/* Skeleton loader */
+.skel{border-radius:8px;background:linear-gradient(90deg,var(--border) 25%,var(--border2) 50%,var(--border) 75%);background-size:200%;animation:shimmer 1.5s infinite;}
+/* Markdown rendered content */
+.md-body{font-size:13px;line-height:1.8;color:var(--text);max-height:400px;overflow-y:auto;padding:16px;}
+.md-body h1,.md-body h2,.md-body h3{margin:16px 0 8px;font-weight:600;color:var(--text);}
+.md-body h1{font-size:20px;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.md-body h2{font-size:16px;} .md-body h3{font-size:14px;}
+.md-body p{margin:8px 0;} .md-body ul,.md-body ol{margin:8px 0 8px 20px;}
+.md-body li{margin:4px 0;} .md-body code{background:var(--bg);padding:2px 6px;border-radius:4px;font-size:12px;border:1px solid var(--border);}
+.md-body pre{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;overflow-x:auto;margin:10px 0;}
+.md-body pre code{background:transparent;border:none;padding:0;}
+.md-body blockquote{border-left:3px solid var(--blue);padding:4px 12px;margin:8px 0;color:var(--text2);background:var(--blue-bg);border-radius:0 6px 6px 0;}
+.md-body a{color:var(--blue);}
+.md-body table{border-collapse:collapse;margin:10px 0;width:100%;}
+.md-body th,.md-body td{border:1px solid var(--border);padding:6px 10px;font-size:12px;text-align:left;}
+.md-body th{background:var(--bg);font-weight:600;}
+/* Tag pills */
+.tag{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border);}
+.tag-rm{cursor:pointer;font-size:12px;margin-left:2px;opacity:.6;} .tag-rm:hover{opacity:1;}
 @keyframes up{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
 @keyframes rot{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 @keyframes prog{0%{width:20%}50%{width:75%}100%{width:20%}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes scaleIn{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const { useState, useEffect, useRef, useCallback } = React;
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
 const PROXY  = "https://teamsgraph.onrender.com";
 const ORG    = "Sogolytics";
+const PAGE_SIZE = 20;
 
 const AC = [{bg:"#f3f0ff",c:"#6d28d9"},{bg:"#ecfdf5",c:"#065f46"},{bg:"#fff7ed",c:"#9a3412"},{bg:"#eff6ff",c:"#1e40af"},{bg:"#fdf4ff",c:"#86198f"},{bg:"#fefce8",c:"#854d0e"}];
 const CATEGORIES = [
-  {id:"bug-fix",     label:"Bug Fix",      icon:"🐛", bg:"#fef2f2", c:"#991b1b", border:"#fecaca"},
-  {id:"code",        label:"Code",         icon:"💻", bg:"#eff6ff", c:"#1e40af", border:"#bfdbfe"},
-  {id:"ui-skill",    label:"UI Skill",     icon:"🎨", bg:"#f3f0ff", c:"#6d28d9", border:"#ddd6fe"},
-  {id:"design-skill",label:"Design Skill", icon:"✨", bg:"#ecfdf5", c:"#065f46", border:"#a7f3d0"},
+  {id:"bug-fix",     label:"Bug Fix",      icon:"\u{1F41B}", bg:"#fef2f2", c:"#991b1b", border:"#fecaca"},
+  {id:"code",        label:"Code",         icon:"\u{1F4BB}", bg:"#eff6ff", c:"#1e40af", border:"#bfdbfe"},
+  {id:"ui-skill",    label:"UI Skill",     icon:"\u{1F3A8}", bg:"#f3f0ff", c:"#6d28d9", border:"#ddd6fe"},
+  {id:"design-skill",label:"Design Skill", icon:"\u{2728}",  bg:"#ecfdf5", c:"#065f46", border:"#a7f3d0"},
+];
+const SORT_OPTS = [
+  {id:"newest",label:"Newest first"},{id:"oldest",label:"Oldest first"},
+  {id:"name-az",label:"Name A-Z"},{id:"name-za",label:"Name Z-A"},
+  {id:"uploader",label:"Uploader A-Z"},{id:"size-desc",label:"Largest first"},
 ];
 const catBy = id => CATEGORIES.find(x=>x.id===id);
-const ac  = n => AC[n.split("").reduce((a,x)=>a+x.charCodeAt(0),0)%AC.length];
-const ini = n => n.trim().split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
+const ac  = n => AC[(n||"").split("").reduce((a,x)=>a+x.charCodeAt(0),0)%AC.length];
+const ini = n => (n||"").trim().split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
 const fd  = d => new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
-const fs  = b => b<1024?b+"B":b<1048576?(b/1024).toFixed(1)+"KB":(b/1048576).toFixed(1)+"MB";
+const fsize = b => b<1024?b+"B":b<1048576?(b/1024).toFixed(1)+"KB":(b/1048576).toFixed(1)+"MB";
+
+// Simple markdown renderer using marked.js
+const renderMd = (text) => {
+  try {
+    if (window.marked) {
+      window.marked.setOptions({breaks:true,gfm:true});
+      return {__html: window.marked.parse(text||"")};
+    }
+  } catch(e) {}
+  return {__html: (text||"").replace(/</g,"&lt;").replace(/\n/g,"<br/>")};
+};
+
+// ── Error Boundary ──
+class ErrorBoundary extends React.Component {
+  constructor(props){super(props);this.state={hasError:false,error:null};}
+  static getDerivedStateFromError(error){return {hasError:true,error};}
+  render(){
+    if(this.state.hasError) return (
+      <div style={{padding:40,textAlign:"center"}}>
+        <div style={{fontSize:48,marginBottom:16}}>⚠️</div>
+        <h2 style={{fontSize:18,fontWeight:600,marginBottom:8,color:"var(--text)"}}>Something went wrong</h2>
+        <p style={{fontSize:13,color:"var(--text3)",marginBottom:16}}>{this.state.error?.message}</p>
+        <button className="btn btn-blue" onClick={()=>{this.setState({hasError:false,error:null});window.location.reload();}}>Reload</button>
+      </div>
+    );
+    return this.props.children;
+  }
+}
+
+// ── Modal Component ──
+function Modal({open,onClose,title,children,width}){
+  useEffect(()=>{
+    if(!open) return;
+    const h = e => {if(e.key==="Escape")onClose();};
+    document.addEventListener("keydown",h);
+    return ()=>document.removeEventListener("keydown",h);
+  },[open,onClose]);
+  if(!open) return null;
+  return (
+    <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="modal" style={{maxWidth:width||500}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"18px 22px",borderBottom:"1px solid var(--border)"}}>
+          <span style={{fontSize:15,fontWeight:600}}>{title}</span>
+          <span style={{cursor:"pointer",fontSize:18,color:"var(--text4)",lineHeight:1}} onClick={onClose}>✕</span>
+        </div>
+        <div style={{padding:"18px 22px"}}>{children}</div>
+      </div>
+    </div>
+  );
+}
+
+// ── Tag Input Component ──
+function TagInput({tags,onChange}){
+  const [input,setInput]=useState("");
+  const add=()=>{const t=input.trim().toLowerCase();if(t&&!tags.includes(t)){onChange([...tags,t]);}setInput("");};
+  return (
+    <div>
+      <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:tags.length?6:0}}>
+        {tags.map(t=><span key={t} className="tag">{t}<span className="tag-rm" onClick={()=>onChange(tags.filter(x=>x!==t))}>✕</span></span>)}
+      </div>
+      <div style={{display:"flex",gap:6}}>
+        <input className="field" value={input} onChange={e=>setInput(e.target.value)}
+          onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();add();}}} placeholder="Type tag + Enter" style={{flex:1}}/>
+        <button type="button" className="btn btn-ghost" onClick={add}>Add</button>
+      </div>
+    </div>
+  );
+}
 
 function App() {
-  const [tab,      setTab]      = useState("browse");
-  const [files,    setFiles]    = useState([]);
-  const [members,  setMembers]  = useState(()=> JSON.parse(localStorage.getItem("sm")||"[]"));
-  const [teams,    setTeams]    = useState(()=> JSON.parse(localStorage.getItem("st")||"[]"));
-  const [fetching, setFetching] = useState(false);
-  const [loadingFiles, setLoadingFiles] = useState(false);
-  const [search,   setSearch]   = useState("");
-  const [preview,  setPreview]  = useState(null);
-  const [toast,    setToast]    = useState(null);
-  const [selMem,   setSelMem]   = useState(null);
-  const [memSearch, setMemSearch] = useState("");
-  const [memDrop,  setMemDrop]  = useState(false);
-  const [selTeam,  setSelTeam]  = useState("");
+  // ── State ──
+  const [tab,        setTab]        = useState("browse");
+  const [files,      setFiles]      = useState([]);
+  const [members,    setMembers]    = useState(()=> JSON.parse(localStorage.getItem("sm")||"[]"));
+  const [teams,      setTeams]      = useState(()=> JSON.parse(localStorage.getItem("st")||"[]"));
+  const [fetching,   setFetching]   = useState(false);
+  const [loadingFiles,setLoadingFiles]= useState(true);
+  const [search,     setSearch]     = useState("");
+  const [preview,    setPreview]    = useState(null);
+  const [toast,      setToast]      = useState(null);
+  const [selMem,     setSelMem]     = useState(null);
+  const [memSearch,  setMemSearch]  = useState("");
+  const [memDrop,    setMemDrop]    = useState(false);
+  const [selTeam,    setSelTeam]    = useState("");
   const [teamSearch, setTeamSearch] = useState("");
-  const [teamDrop, setTeamDrop] = useState(false);
-  const [customFolder, setCustomFolder] = useState("");
-  const [browseFolder, setBrowseFolder] = useState("All");
-  const [selCategory, setSelCategory] = useState("");
-  const [browseCategory, setBrowseCategory] = useState("All");
-  const [title,    setTitle]    = useState("");
-  const [desc,     setDesc]     = useState("");
-  const [selFile,  setSelFile]  = useState(null);
-  const [dragOver, setDragOver] = useState(false);
-  const [uploading,setUploading]= useState(false);
+  const [teamDrop,   setTeamDrop]   = useState(false);
+  const [customFolder,setCustomFolder]=useState("");
+  const [browseFolder,setBrowseFolder]=useState("All");
+  const [selCategory,setSelCategory]= useState("");
+  const [browseCategory,setBrowseCategory]=useState("All");
+  const [title,      setTitle]      = useState("");
+  const [desc,       setDesc]       = useState("");
+  const [selFile,    setSelFile]    = useState(null);
+  const [dragOver,   setDragOver]   = useState(false);
+  const [uploading,  setUploading]  = useState(false);
+  const [vscodePanel,setVscodePanel]= useState(null);
+  const [darkMode,   setDarkMode]   = useState(()=>localStorage.getItem("theme")==="dark");
+  const [sortBy,     setSortBy]     = useState("newest");
+  const [visibleCount,setVisibleCount]=useState(PAGE_SIZE);
+  const [editModal,  setEditModal]  = useState(null);
+  const [deleteModal,setDeleteModal]= useState(null);
+  const [deletePwd,  setDeletePwd]  = useState("");
+  const [deleting,   setDeleting]   = useState(false);
+  const [editData,   setEditData]   = useState({});
+  const [saving,     setSaving]     = useState(false);
+  const [memberView, setMemberView] = useState(null);
+  const [previewMode,setPreviewMode]= useState("rendered");
+  const [uploadTags, setUploadTags] = useState([]);
+  const [newCount,   setNewCount]   = useState(0);
+  const prevFileCount = useRef(0);
   const fileRef = useRef();
   const memRef  = useRef();
   const teamRef = useRef();
+  const searchRef = useRef();
+
+  // ── Dark mode ──
+  useEffect(()=>{
+    document.documentElement.setAttribute("data-theme",darkMode?"dark":"light");
+    localStorage.setItem("theme",darkMode?"dark":"light");
+  },[darkMode]);
+
+  // ── Keyboard shortcuts ──
+  useEffect(()=>{
+    const h = e => {
+      if(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA") return;
+      if(e.key==="/"){e.preventDefault();searchRef.current?.focus();}
+      if(e.key==="Escape"){setPreview(null);setVscodePanel(null);setEditModal(null);setDeleteModal(null);setMemberView(null);}
+    };
+    document.addEventListener("keydown",h);
+    return ()=>document.removeEventListener("keydown",h);
+  },[]);
 
   const filteredMembers = members.filter(m=>{
     const q=memSearch.toLowerCase();
     return !q||m.displayName.toLowerCase().includes(q)||(m.email||"").toLowerCase().includes(q);
   });
 
-  // Build all folder options: ADO teams + custom folders from existing files
   const existingFolders = [...new Set(files.map(f=>f.folder).filter(f=>f&&f!=="General"&&!teams.some(t=>t.name===f)))];
   const allFolderOptions = [
     ...teams.map(t=>({id:t.id,name:t.name,label:t.name+(t.project?` (${t.project})`:""),type:"team"})),
@@ -139,6 +287,7 @@ function App() {
       const m = d.members||[];
       setMembers(m);
       localStorage.setItem("sm", JSON.stringify(m));
+      localStorage.setItem("sm_ts", Date.now().toString());
       toast_(`${m.length} members loaded`,"info");
     } catch(e){ toast_(`Error: ${e.message}`,"error"); }
     setFetching(false);
@@ -152,6 +301,7 @@ function App() {
       const t = d.teams||[];
       setTeams(t);
       localStorage.setItem("st", JSON.stringify(t));
+      localStorage.setItem("st_ts", Date.now().toString());
     } catch(e){}
   }, []);
 
@@ -161,19 +311,36 @@ function App() {
       const r = await fetch(`${PROXY}/files`);
       if (!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error||`HTTP ${r.status}`); }
       const d = await r.json();
-      setFiles((d.files||[]).map(f=>({
+      const loaded = (d.files||[]).map(f=>({
         id:f.id, filename:f.filename, title:f.title, desc:f.description,
         uploader:f.uploader, email:f.email, size:f.size, ts:f.uploaded_at, content:f.content,
-        folder:f.folder||"General", category:f.category||""
-      })));
+        folder:f.folder||"General", category:f.category||"",
+        tags:f.tags?f.tags.split(",").filter(Boolean):[],
+        version:f.version||1, updatedAt:f.updated_at
+      }));
+      // New file notification
+      if (prevFileCount.current > 0 && loaded.length > prevFileCount.current) {
+        const diff = loaded.length - prevFileCount.current;
+        setNewCount(diff);
+        setTimeout(()=>setNewCount(0), 5000);
+      }
+      prevFileCount.current = loaded.length;
+      setFiles(loaded);
     } catch(e){ toast_(`Files: ${e.message}`,"error"); }
     setLoadingFiles(false);
   }, [toast_]);
 
+  // Initial load + cache expiry (1 hour)
   useEffect(()=>{
-    if (members.length === 0) loadMembers();
-    if (teams.length === 0) loadTeams();
+    const HOUR = 3600000;
+    const smTs = Number(localStorage.getItem("sm_ts")||0);
+    const stTs = Number(localStorage.getItem("st_ts")||0);
+    if (members.length === 0 || Date.now()-smTs > HOUR) loadMembers();
+    if (teams.length === 0 || Date.now()-stTs > HOUR) loadTeams();
     loadFiles();
+    // Poll for new files every 60s
+    const interval = setInterval(loadFiles, 60000);
+    return ()=>clearInterval(interval);
   }, []);  // eslint-disable-line
 
   const pickFile = f => {
@@ -193,14 +360,16 @@ function App() {
         description:desc.trim(), uploader:selMem.displayName,
         email:selMem.email||"", size:selFile.size, uploaded_at:Date.now(), content,
         folder:(selTeam==="__new__"?customFolder.trim():selTeam)||"General",
-        category:selCategory||""
+        category:selCategory||"",
+        tags:uploadTags.join(",")
       };
       const r = await fetch(`${PROXY}/files`,{
         method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)
       });
       if (!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error||`HTTP ${r.status}`); }
       await loadFiles();
-      setTab("browse"); setTitle(""); setDesc(""); setSelFile(null); setSelMem(null); setSelTeam(""); setCustomFolder(""); setSelCategory("");
+      setTab("browse"); setTitle(""); setDesc(""); setSelFile(null); setSelMem(null);
+      setSelTeam(""); setCustomFolder(""); setSelCategory(""); setUploadTags([]);
       toast_(`${selFile.name} uploaded`);
     } catch(e){ toast_(`Upload failed: ${e.message}`,"error"); }
     setUploading(false);
@@ -213,33 +382,186 @@ function App() {
     toast_(`Downloaded ${f.filename}`);
   };
 
-  const deleteFile = async (f) => {
-    const pwd = prompt(`Enter password to delete "${f.title||f.filename}":`);
-    if (pwd === null) return;
-    if (pwd !== "delete234"){ toast_("Incorrect password","error"); return; }
+  // ── VS Code actions (fixed) ──
+  const openInVSCode = async f => {
     try {
-      const r = await fetch(`${PROXY}/files/${f.id}`,{method:"DELETE"});
-      if (!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error||`HTTP ${r.status}`); }
-      if (preview?.id===f.id) setPreview(null);
-      await loadFiles();
-      toast_(`Deleted ${f.filename}`);
-    } catch(e){ toast_(`Delete failed: ${e.message}`,"error"); }
+      if (window.showSaveFilePicker) {
+        const handle = await window.showSaveFilePicker({suggestedName:f.filename,types:[{description:"Markdown",accept:{"text/markdown":[".md"]}}]});
+        const writable = await handle.createWritable();
+        await writable.write(f.content);
+        await writable.close();
+        // Open the saved file in VS Code
+        window.open(`vscode://file/${handle.name}`, "_self");
+        toast_(`Saved & opening in VS Code...`);
+      } else {
+        // Fallback: download + attempt protocol
+        download(f);
+        setTimeout(()=>{ window.location.href = `vscode://file/${f.filename}`; }, 600);
+        toast_(`Downloaded — attempting to open VS Code...`);
+      }
+    } catch(e) {
+      if(e.name!=="AbortError") toast_("Could not open VS Code. Is it installed?","error");
+    }
   };
 
-  const filtered = files.filter(f=>{
-    if (browseFolder!=="All" && f.folder!==browseFolder) return false;
-    if (browseCategory!=="All" && f.category!==browseCategory) return false;
-    const q=search.toLowerCase();
-    return !q||[f.filename,f.uploader,f.content,f.title||"",f.desc||"",f.folder||"",catBy(f.category)?.label||""].some(s=>s.toLowerCase().includes(q));
-  });
-  const folders = ["All",...[...new Set(files.map(f=>f.folder||"General"))].sort()];
+  const copyToClipboard = async f => {
+    try {
+      await navigator.clipboard.writeText(f.content);
+      toast_(`Copied to clipboard — paste in VS Code with Ctrl+V`);
+    } catch(e) { toast_("Clipboard copy failed","error"); }
+  };
 
+  const saveToWorkspace = async f => {
+    try {
+      if (window.showDirectoryPicker) {
+        const dirHandle = await window.showDirectoryPicker();
+        const fileHandle = await dirHandle.getFileHandle(f.filename, {create:true});
+        const writable = await fileHandle.createWritable();
+        await writable.write(f.content);
+        await writable.close();
+        toast_(`Saved ${f.filename} to ${dirHandle.name}/`);
+      } else {
+        download(f);
+        toast_("Folder picker not supported — file downloaded instead");
+      }
+    } catch(e) {
+      if (e.name !== "AbortError") toast_(`Save failed: ${e.message}`,"error");
+    }
+  };
+
+  const saveToMCPFolder = async f => {
+    try {
+      if (window.showDirectoryPicker) {
+        const dirHandle = await window.showDirectoryPicker({id:"claude-mcp",startIn:"documents"});
+        // Try to create .claude subfolder
+        let target = dirHandle;
+        try { target = await dirHandle.getDirectoryHandle(".claude",{create:true}); } catch(e){}
+        const fileHandle = await target.getFileHandle(f.filename, {create:true});
+        const writable = await fileHandle.createWritable();
+        await writable.write(f.content);
+        await writable.close();
+        toast_(`Saved to ${dirHandle.name}/.claude/${f.filename}`);
+      } else {
+        download(f);
+        toast_("Folder picker not supported — file downloaded instead");
+      }
+    } catch(e) {
+      if (e.name !== "AbortError") toast_(`Save failed: ${e.message}`,"error");
+    }
+  };
+
+  // ── Delete (server-side auth) ──
+  const deleteFile = async () => {
+    if (!deleteModal||deleting) return;
+    setDeleting(true);
+    try {
+      const r = await fetch(`${PROXY}/files/${deleteModal.id}`,{
+        method:"DELETE", headers:{"x-delete-password":deletePwd}
+      });
+      if (!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error||`HTTP ${r.status}`); }
+      if (preview?.id===deleteModal.id) setPreview(null);
+      setDeleteModal(null); setDeletePwd("");
+      await loadFiles();
+      toast_(`Deleted ${deleteModal.filename}`);
+    } catch(e){ toast_(`Delete failed: ${e.message}`,"error"); }
+    setDeleting(false);
+  };
+
+  // ── Edit file ──
+  const openEdit = f => {
+    setEditData({title:f.title||"",description:f.desc||"",category:f.category||"",folder:f.folder||"General",tags:f.tags||[]});
+    setEditModal(f);
+  };
+  const saveEdit = async () => {
+    if (!editModal||saving) return;
+    setSaving(true);
+    try {
+      const r = await fetch(`${PROXY}/files/${editModal.id}`,{
+        method:"PUT", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({...editData,tags:editData.tags?.join(",")||""})
+      });
+      if (!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error||`HTTP ${r.status}`); }
+      setEditModal(null);
+      await loadFiles();
+      toast_("File updated");
+    } catch(e){ toast_(`Update failed: ${e.message}`,"error"); }
+    setSaving(false);
+  };
+
+  // ── Bulk download as ZIP ──
+  const bulkDownload = async (filesToZip) => {
+    if(!window.JSZip){toast_("JSZip not loaded","error");return;}
+    toast_("Creating ZIP...","info");
+    const zip = new JSZip();
+    filesToZip.forEach(f=>zip.file(f.filename,f.content));
+    const blob = await zip.generateAsync({type:"blob"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `skills-${browseFolder!=="All"?browseFolder:"all"}.zip`;
+    a.click();
+    toast_(`Downloaded ${filesToZip.length} files as ZIP`);
+  };
+
+  // ── Export to PDF (print) ──
+  const exportPdf = f => {
+    const w = window.open("","_blank");
+    const html = renderMd(f.content).__html;
+    w.document.write(`<!DOCTYPE html><html><head><title>${f.title||f.filename}</title>
+      <style>body{font-family:system-ui;max-width:700px;margin:40px auto;padding:0 20px;line-height:1.7;font-size:14px;color:#1e293b;}
+      h1{font-size:22px;border-bottom:1px solid #e2e8f0;padding-bottom:8px;} h2{font-size:17px;} h3{font-size:14px;}
+      code{background:#f1f5f9;padding:2px 5px;border-radius:3px;font-size:12px;}
+      pre{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:12px;overflow-x:auto;}
+      blockquote{border-left:3px solid #0078d4;padding:4px 12px;margin:10px 0;color:#475569;background:#eff6ff;}
+      table{border-collapse:collapse;width:100%;} th,td{border:1px solid #e2e8f0;padding:6px 10px;font-size:12px;} th{background:#f8fafc;}
+      @media print{body{margin:0;}} </style></head><body>
+      <h1>${f.title||f.filename}</h1>
+      <p style="color:#64748b;font-size:12px;margin-bottom:20px;">By ${f.uploader} · ${fd(f.ts)}</p>
+      ${html}</body></html>`);
+    w.document.close();
+    setTimeout(()=>w.print(),300);
+  };
+
+  // ── Filtering + sorting ──
+  const filtered = useMemo(()=>{
+    let list = files.filter(f=>{
+      if (browseFolder!=="All" && f.folder!==browseFolder) return false;
+      if (browseCategory!=="All" && f.category!==browseCategory) return false;
+      if (memberView && f.uploader!==memberView) return false;
+      const q=search.toLowerCase();
+      return !q||[f.filename,f.uploader,f.content,f.title||"",f.desc||"",f.folder||"",
+        catBy(f.category)?.label||"",...(f.tags||[])].some(s=>s.toLowerCase().includes(q));
+    });
+    // Sort
+    switch(sortBy){
+      case "oldest":  list.sort((a,b)=>a.ts-b.ts); break;
+      case "name-az": list.sort((a,b)=>(a.title||a.filename).localeCompare(b.title||b.filename)); break;
+      case "name-za": list.sort((a,b)=>(b.title||b.filename).localeCompare(a.title||a.filename)); break;
+      case "uploader":list.sort((a,b)=>a.uploader.localeCompare(b.uploader)); break;
+      case "size-desc":list.sort((a,b)=>b.size-a.size); break;
+      default: list.sort((a,b)=>b.ts-a.ts);
+    }
+    return list;
+  },[files,browseFolder,browseCategory,search,sortBy,memberView]);
+
+  const paged = filtered.slice(0,visibleCount);
+  const folders = ["All",...[...new Set(files.map(f=>f.folder||"General"))].sort()];
   const uniq = new Set(files.map(f=>f.uploader)).size;
   const ready = selMem && selFile;
+
+  // Reset visible count when filters change
+  useEffect(()=>setVisibleCount(PAGE_SIZE),[browseFolder,browseCategory,search,sortBy,memberView]);
 
   return (
     <div className="wrap">
       {toast && <div className={`toast ${toast.sev==="error"?"t-err":toast.sev==="info"?"t-inf":"t-ok"}`}>{toast.msg}</div>}
+
+      {/* New file notification banner */}
+      {newCount>0&&(
+        <div style={{background:"var(--green-bg)",border:"1.5px solid var(--green-border)",borderRadius:10,padding:"10px 16px",marginBottom:12,display:"flex",alignItems:"center",justifyContent:"space-between",animation:"up .25s ease"}}>
+          <span style={{fontSize:13,fontWeight:500,color:"var(--green)"}}>{newCount} new file{newCount>1?"s":""} uploaded!</span>
+          <span style={{fontSize:12,color:"var(--text4)",cursor:"pointer"}} onClick={()=>setNewCount(0)}>Dismiss</span>
+        </div>
+      )}
 
       {/* Header */}
       <div className="header-card">
@@ -249,10 +571,17 @@ function App() {
             <h1 style={{fontSize:22,fontWeight:600,color:"#fff",margin:0}}>Team Skills Directory</h1>
             <p style={{fontSize:13,color:"rgba(255,255,255,.8)",margin:0}}>dev.azure.com / <b>Sogolytics</b></p>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:6,fontSize:11,padding:"4px 12px",borderRadius:20,background:"rgba(255,255,255,.15)",color:"#fff",border:"1px solid rgba(255,255,255,.25)",cursor:"pointer"}} onClick={loadMembers}>
-            {fetching
-              ? <><svg className="spin" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Loading…</>
-              : <>● {members.length} members ↻</>}
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            {/* Dark mode toggle */}
+            <div onClick={()=>setDarkMode(!darkMode)} title={darkMode?"Light mode":"Dark mode"}
+              style={{width:32,height:32,borderRadius:8,background:"rgba(255,255,255,.15)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:16,border:"1px solid rgba(255,255,255,.25)"}}>
+              {darkMode?"☀️":"🌙"}
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:6,fontSize:11,padding:"4px 12px",borderRadius:20,background:"rgba(255,255,255,.15)",color:"#fff",border:"1px solid rgba(255,255,255,.25)",cursor:"pointer"}} onClick={loadMembers}>
+              {fetching
+                ? <><svg className="spin" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Loading…</>
+                : <>● {members.length} members ↻</>}
+            </div>
           </div>
         </div>
         <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
@@ -262,6 +591,7 @@ function App() {
               <div><p style={{margin:0,fontSize:18,fontWeight:600,color:"#fff",lineHeight:1}}>{v}</p><p style={{margin:0,fontSize:11,color:"rgba(255,255,255,.7)"}}>{l}</p></div>
             </div>
           ))}
+          <div style={{marginLeft:"auto",fontSize:10,color:"rgba(255,255,255,.5)",alignSelf:"flex-end"}}>Press / to search · Esc to close</div>
         </div>
       </div>
 
@@ -275,17 +605,18 @@ function App() {
           </div>
         </div>
 
-        {/* Upload */}
+        {/* ════════ Upload Tab ════════ */}
         {tab==="upload"&&(
           <div className="section" style={{maxWidth:540}}>
             {members.length===0?(
               <div className="empty">
                 {fetching
-                  ? <><div className="bar"><div className="bar-fill"/></div><p style={{marginTop:12,fontSize:13,color:"#64748b"}}>Loading Azure DevOps members…</p></>
+                  ? <><div className="bar"><div className="bar-fill"/></div><p style={{marginTop:12,fontSize:13,color:"var(--text3)"}}>Loading Azure DevOps members…</p></>
                   : <><p style={{fontSize:14,fontWeight:600,marginBottom:8}}>Could not load members</p><button className="btn btn-blue" onClick={loadMembers}>Retry</button></>}
               </div>
             ):(
               <>
+                {/* Member picker */}
                 <div style={{marginBottom:16}} ref={memRef}>
                   <span className="lbl">Select team member</span>
                   <div style={{position:"relative"}}>
@@ -295,23 +626,23 @@ function App() {
                       onChange={e=>{setMemSearch(e.target.value);setMemDrop(true);if(selMem){setSelMem(null);}}}
                       style={{paddingRight:selMem?36:14}}/>
                     {selMem&&!memDrop&&(
-                      <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",cursor:"pointer",fontSize:14,color:"#94a3b8"}}
+                      <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",cursor:"pointer",fontSize:14,color:"var(--text4)"}}
                         onClick={()=>{setSelMem(null);setMemSearch("");setMemDrop(true);}}>✕</span>
                     )}
                     {memDrop&&(
-                      <div style={{position:"absolute",top:"100%",left:0,right:0,zIndex:50,background:"#fff",border:"1.5px solid #e2e8f0",borderRadius:10,marginTop:4,maxHeight:220,overflowY:"auto",boxShadow:"0 8px 24px rgba(0,0,0,.1)"}}>
-                        {filteredMembers.length===0&&<div style={{padding:"12px 14px",fontSize:13,color:"#94a3b8"}}>No members found</div>}
+                      <div style={{position:"absolute",top:"100%",left:0,right:0,zIndex:50,background:"var(--card)",border:"1.5px solid var(--border)",borderRadius:10,marginTop:4,maxHeight:220,overflowY:"auto",boxShadow:"0 8px 24px rgba(0,0,0,.15)"}}>
+                        {filteredMembers.length===0&&<div style={{padding:"12px 14px",fontSize:13,color:"var(--text4)"}}>No members found</div>}
                         {filteredMembers.map(m=>{
                           const {bg,c}=ac(m.displayName);
                           return (
                             <div key={m.id} onClick={()=>{setSelMem(m);setMemSearch("");setMemDrop(false);}}
-                              style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",cursor:"pointer",transition:"background .1s",borderBottom:"1px solid #f1f5f9"}}
-                              onMouseEnter={e=>e.currentTarget.style.background="#eff6ff"}
+                              style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",cursor:"pointer",transition:"background .1s",borderBottom:"1px solid var(--border2)"}}
+                              onMouseEnter={e=>e.currentTarget.style.background="var(--blue-bg)"}
                               onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                               <div className="avatar" style={{width:32,height:32,fontSize:11,background:bg,color:c}}>{ini(m.displayName)}</div>
                               <div style={{flex:1,minWidth:0}}>
-                                <p style={{margin:0,fontSize:13,fontWeight:600,color:"#1e293b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.displayName}</p>
-                                {m.email&&<p style={{margin:0,fontSize:11,color:"#64748b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.email}</p>}
+                                <p style={{margin:0,fontSize:13,fontWeight:600,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.displayName}</p>
+                                {m.email&&<p style={{margin:0,fontSize:11,color:"var(--text3)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.email}</p>}
                               </div>
                             </div>
                           );
@@ -320,16 +651,17 @@ function App() {
                     )}
                   </div>
                   {selMem&&!memDrop&&(
-                    <div style={{display:"flex",alignItems:"center",gap:10,marginTop:10,padding:"10px 14px",background:"#eff6ff",borderRadius:10,border:"1.5px solid #bfdbfe"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10,marginTop:10,padding:"10px 14px",background:"var(--blue-bg)",borderRadius:10,border:"1.5px solid var(--blue-border)"}}>
                       <div className="avatar" style={{width:36,height:36,fontSize:12,background:ac(selMem.displayName).bg,color:ac(selMem.displayName).c}}>{ini(selMem.displayName)}</div>
                       <div>
-                        <p style={{margin:0,fontSize:13,fontWeight:600,color:"#1e293b"}}>{selMem.displayName}</p>
-                        <p style={{margin:0,fontSize:11,color:"#0369a1"}}>{selMem.email||"Azure DevOps member"}</p>
+                        <p style={{margin:0,fontSize:13,fontWeight:600,color:"var(--text)"}}>{selMem.displayName}</p>
+                        <p style={{margin:0,fontSize:11,color:"var(--blue)"}}>{selMem.email||"Azure DevOps member"}</p>
                       </div>
                     </div>
                   )}
                 </div>
 
+                {/* Team/folder picker */}
                 <div style={{marginBottom:16}} ref={teamRef}>
                   <span className="lbl">Team / Folder</span>
                   <div style={{position:"relative"}}>
@@ -339,54 +671,53 @@ function App() {
                       onChange={e=>{setTeamSearch(e.target.value);setTeamDrop(true);if(selTeam&&selTeam!=="__new__"){setSelTeam("");setCustomFolder("");}}}
                       style={{paddingRight:selTeam&&selTeam!=="__new__"?36:14}}/>
                     {selTeam&&selTeam!=="__new__"&&!teamDrop&&(
-                      <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",cursor:"pointer",fontSize:14,color:"#94a3b8"}}
+                      <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",cursor:"pointer",fontSize:14,color:"var(--text4)"}}
                         onClick={()=>{setSelTeam("");setTeamSearch("");setTeamDrop(true);}}>✕</span>
                     )}
                     {teamDrop&&(
-                      <div style={{position:"absolute",top:"100%",left:0,right:0,zIndex:50,background:"#fff",border:"1.5px solid #e2e8f0",borderRadius:10,marginTop:4,maxHeight:220,overflowY:"auto",boxShadow:"0 8px 24px rgba(0,0,0,.1)"}}>
+                      <div style={{position:"absolute",top:"100%",left:0,right:0,zIndex:50,background:"var(--card)",border:"1.5px solid var(--border)",borderRadius:10,marginTop:4,maxHeight:220,overflowY:"auto",boxShadow:"0 8px 24px rgba(0,0,0,.15)"}}>
                         <div onClick={()=>{setSelTeam("");setTeamSearch("");setTeamDrop(false);setCustomFolder("");}}
-                          style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",cursor:"pointer",borderBottom:"1px solid #f1f5f9"}}
-                          onMouseEnter={e=>e.currentTarget.style.background="#f8fafc"}
+                          style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",cursor:"pointer",borderBottom:"1px solid var(--border2)"}}
+                          onMouseEnter={e=>e.currentTarget.style.background="var(--bg)"}
                           onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                           <span style={{fontSize:14}}>📂</span>
-                          <span style={{fontSize:13,fontWeight:500,color:"#64748b"}}>General (default)</span>
+                          <span style={{fontSize:13,fontWeight:500,color:"var(--text3)"}}>General (default)</span>
                         </div>
                         {filteredFolders.map(f=>(
                           <div key={f.id} onClick={()=>{setSelTeam(f.name);setTeamSearch("");setTeamDrop(false);setCustomFolder("");}}
-                            style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",cursor:"pointer",borderBottom:"1px solid #f1f5f9"}}
-                            onMouseEnter={e=>e.currentTarget.style.background="#eff6ff"}
+                            style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",cursor:"pointer",borderBottom:"1px solid var(--border2)"}}
+                            onMouseEnter={e=>e.currentTarget.style.background="var(--blue-bg)"}
                             onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                             <span style={{fontSize:14}}>{f.type==="team"?"👥":"📁"}</span>
                             <div style={{flex:1,minWidth:0}}>
-                              <p style={{margin:0,fontSize:13,fontWeight:600,color:"#1e293b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.label}</p>
+                              <p style={{margin:0,fontSize:13,fontWeight:600,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.label}</p>
                             </div>
                           </div>
                         ))}
-                        {filteredFolders.length===0&&!teamSearch&&<div style={{padding:"10px 14px",fontSize:12,color:"#94a3b8"}}>No teams loaded</div>}
+                        {filteredFolders.length===0&&!teamSearch&&<div style={{padding:"10px 14px",fontSize:12,color:"var(--text4)"}}>No teams loaded</div>}
                         <div onClick={()=>{setSelTeam("__new__");setTeamSearch("");setTeamDrop(false);}}
-                          style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",cursor:"pointer",borderTop:"1.5px solid #e2e8f0",background:"#f8fafc"}}
-                          onMouseEnter={e=>e.currentTarget.style.background="#eff6ff"}
-                          onMouseLeave={e=>e.currentTarget.style.background="#f8fafc"}>
-                          <span style={{fontSize:14,color:"#0078d4"}}>+</span>
-                          <span style={{fontSize:13,fontWeight:600,color:"#0078d4"}}>Create new folder</span>
+                          style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",cursor:"pointer",borderTop:"1.5px solid var(--border)",background:"var(--bg)"}}
+                          onMouseEnter={e=>e.currentTarget.style.background="var(--blue-bg)"}
+                          onMouseLeave={e=>e.currentTarget.style.background="var(--bg)"}>
+                          <span style={{fontSize:14,color:"var(--blue)"}}>+</span>
+                          <span style={{fontSize:13,fontWeight:600,color:"var(--blue)"}}>Create new folder</span>
                         </div>
                       </div>
                     )}
                   </div>
                   {selTeam==="__new__"&&(
-                    <input className="field" style={{marginTop:8}} value={customFolder} onChange={e=>setCustomFolder(e.target.value)}
-                      placeholder="Enter new folder name…" autoFocus/>
+                    <input className="field" style={{marginTop:8}} value={customFolder} onChange={e=>setCustomFolder(e.target.value)} placeholder="Enter new folder name…" autoFocus/>
                   )}
                   {selTeam&&selTeam!=="__new__"&&!teamDrop&&(
-                    <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8,padding:"8px 12px",background:"#fefce8",borderRadius:8,border:"1.5px solid #fde68a"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8,padding:"8px 12px",background:"var(--yellow-bg)",borderRadius:8,border:"1.5px solid var(--yellow-border)"}}>
                       <span style={{fontSize:16}}>📁</span>
-                      <span style={{fontSize:13,fontWeight:600,color:"#854d0e"}}>{selTeam}</span>
+                      <span style={{fontSize:13,fontWeight:600,color:"var(--yellow-c)"}}>{selTeam}</span>
                     </div>
                   )}
                   {selTeam==="__new__"&&customFolder.trim()&&(
-                    <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8,padding:"8px 12px",background:"#ecfdf5",borderRadius:8,border:"1.5px solid #a7f3d0"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8,padding:"8px 12px",background:"var(--green-bg)",borderRadius:8,border:"1.5px solid var(--green-border)"}}>
                       <span style={{fontSize:16}}>📁</span>
-                      <span style={{fontSize:13,fontWeight:600,color:"#065f46"}}>{customFolder.trim()} (new)</span>
+                      <span style={{fontSize:13,fontWeight:600,color:"var(--green)"}}>{customFolder.trim()} (new)</span>
                     </div>
                   )}
                 </div>
@@ -403,15 +734,17 @@ function App() {
                       return (
                         <button key={cat.id} type="button" onClick={()=>setSelCategory(active?"":cat.id)}
                           style={{display:"inline-flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:20,
-                            border:`1.5px solid ${active?cat.c:cat.border}`,
-                            background:active?cat.bg:"#fff",
-                            color:active?cat.c:"#64748b",
-                            fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
+                            border:`1.5px solid ${active?cat.c:cat.border}`,background:active?cat.bg:"var(--card)",
+                            color:active?cat.c:"var(--text3)",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
                           <span>{cat.icon}</span>{cat.label}
                         </button>
                       );
                     })}
                   </div>
+                </div>
+                <div style={{marginBottom:14}}>
+                  <span className="lbl">Tags</span>
+                  <TagInput tags={uploadTags} onChange={setUploadTags}/>
                 </div>
                 <div style={{marginBottom:14}}>
                   <span className="lbl">Short description</span>
@@ -424,24 +757,23 @@ function App() {
                     onDragOver={e=>{e.preventDefault();setDragOver(true)}}
                     onDragLeave={()=>setDragOver(false)}
                     onDrop={e=>{e.preventDefault();setDragOver(false);pickFile(e.dataTransfer.files[0]);}}
-                    onClick={()=>fileRef.current.click()}
-                  >
+                    onClick={()=>fileRef.current.click()}>
                     {selFile?(
                       <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12}}>
                         <span style={{fontSize:28}}>📄</span>
                         <div style={{textAlign:"left"}}>
-                          <p style={{margin:0,fontSize:14,fontWeight:600,color:"#1e293b"}}>{selFile.name}</p>
-                          <p style={{margin:"2px 0 0",fontSize:12,color:"#64748b"}}>
+                          <p style={{margin:0,fontSize:14,fontWeight:600,color:"var(--text)"}}>{selFile.name}</p>
+                          <p style={{margin:"2px 0 0",fontSize:12,color:"var(--text3)"}}>
                             {(selFile.size/1024).toFixed(1)} KB ·{" "}
-                            <span style={{color:"#0078d4",cursor:"pointer"}} onClick={e=>{e.stopPropagation();setSelFile(null);fileRef.current.value="";}}>Remove</span>
+                            <span style={{color:"var(--blue)",cursor:"pointer"}} onClick={e=>{e.stopPropagation();setSelFile(null);fileRef.current.value="";}}>Remove</span>
                           </p>
                         </div>
                       </div>
                     ):(
                       <>
                         <div style={{fontSize:32,marginBottom:8}}>☁️</div>
-                        <p style={{fontSize:14,fontWeight:600,color:"#1e293b",marginBottom:4}}>Drop your <code style={{background:"#dbeafe",color:"#1e40af",padding:"1px 6px",borderRadius:4,fontSize:12}}>skill.md</code> here</p>
-                        <p style={{fontSize:12,color:"#94a3b8"}}>or click to browse · .md files only</p>
+                        <p style={{fontSize:14,fontWeight:600,color:"var(--text)",marginBottom:4}}>Drop your <code style={{background:"#dbeafe",color:"#1e40af",padding:"1px 6px",borderRadius:4,fontSize:12}}>skill.md</code> here</p>
+                        <p style={{fontSize:12,color:"var(--text4)"}}>or click to browse · .md files only</p>
                       </>
                     )}
                   </div>
@@ -450,13 +782,12 @@ function App() {
 
                 <button onClick={upload} disabled={!ready||uploading}
                   style={{width:"100%",padding:"12px",borderRadius:10,border:"none",fontFamily:"Inter,sans-serif",
-                    background:ready&&!uploading?"#0078d4":"#e2e8f0",
-                    color:ready&&!uploading?"#fff":"#94a3b8",
-                    fontSize:14,fontWeight:600,
+                    background:ready&&!uploading?"var(--blue)":"var(--border)",
+                    color:ready&&!uploading?"#fff":"var(--text4)",fontSize:14,fontWeight:600,
                     cursor:ready&&!uploading?"pointer":"not-allowed"}}>
                   {uploading?"Uploading…":"Upload skill file"}
                 </button>
-                {!ready&&<p style={{fontSize:11,color:"#94a3b8",textAlign:"center",marginTop:8}}>
+                {!ready&&<p style={{fontSize:11,color:"var(--text4)",textAlign:"center",marginTop:8}}>
                   {!selMem&&!selFile?"Select a member and .md file":!selMem?"Select a team member":"Select a .md file"}
                 </p>}
               </>
@@ -464,86 +795,139 @@ function App() {
           </div>
         )}
 
-        {/* Browse */}
+        {/* ════════ Browse Tab ════════ */}
         {tab==="browse"&&(
           <div className="section">
+            {/* Member view banner */}
+            {memberView&&(
+              <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"var(--blue-bg)",borderRadius:10,border:"1.5px solid var(--blue-border)",marginBottom:14}}>
+                <div className="avatar" style={{width:32,height:32,fontSize:11,background:ac(memberView).bg,color:ac(memberView).c}}>{ini(memberView)}</div>
+                <div style={{flex:1}}>
+                  <span style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>{memberView}</span>
+                  <span style={{fontSize:12,color:"var(--text3)",marginLeft:8}}>{files.filter(f=>f.uploader===memberView).length} files</span>
+                </div>
+                <span style={{cursor:"pointer",fontSize:12,color:"var(--blue)",fontWeight:500}} onClick={()=>setMemberView(null)}>Clear filter ✕</span>
+              </div>
+            )}
+
+            {/* Folder pills */}
             {folders.length>2&&(
               <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
                 {folders.map(f=>(
                   <button key={f} onClick={()=>setBrowseFolder(f)}
                     style={{padding:"5px 14px",borderRadius:20,border:"1.5px solid",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif",
-                      background:browseFolder===f?"#0078d4":"#f8fafc",
-                      color:browseFolder===f?"#fff":"#64748b",
-                      borderColor:browseFolder===f?"#0078d4":"#e2e8f0"}}>
+                      background:browseFolder===f?"var(--blue)":"var(--bg)",color:browseFolder===f?"#fff":"var(--text3)",
+                      borderColor:browseFolder===f?"var(--blue)":"var(--border)"}}>
                     {f==="All"?`All (${files.length})`:`📁 ${f}`}
                   </button>
                 ))}
               </div>
             )}
+
+            {/* Category pills */}
             <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14,alignItems:"center"}}>
-              <span style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".06em",marginRight:4}}>Category:</span>
+              <span style={{fontSize:11,fontWeight:600,color:"var(--text4)",textTransform:"uppercase",letterSpacing:".06em",marginRight:4}}>Category:</span>
               <button onClick={()=>setBrowseCategory("All")}
                 style={{padding:"4px 12px",borderRadius:20,border:"1.5px solid",fontSize:11.5,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif",
-                  background:browseCategory==="All"?"#1e293b":"#f8fafc",
-                  color:browseCategory==="All"?"#fff":"#64748b",
-                  borderColor:browseCategory==="All"?"#1e293b":"#e2e8f0"}}>All</button>
+                  background:browseCategory==="All"?"var(--text)":"var(--bg)",color:browseCategory==="All"?"var(--card)":"var(--text3)",
+                  borderColor:browseCategory==="All"?"var(--text)":"var(--border)"}}>All</button>
               {CATEGORIES.map(cat=>{
                 const count = files.filter(f=>f.category===cat.id).length;
                 const active = browseCategory===cat.id;
                 return (
                   <button key={cat.id} onClick={()=>setBrowseCategory(active?"All":cat.id)}
                     style={{display:"inline-flex",alignItems:"center",gap:5,padding:"4px 12px",borderRadius:20,
-                      border:`1.5px solid ${active?cat.c:cat.border}`,
-                      background:active?cat.bg:"#fff",
-                      color:active?cat.c:"#64748b",
-                      fontSize:11.5,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                      border:`1.5px solid ${active?cat.c:cat.border}`,background:active?cat.bg:"var(--card)",
+                      color:active?cat.c:"var(--text3)",fontSize:11.5,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
                     <span>{cat.icon}</span>{cat.label}{count>0&&<span style={{opacity:.7}}>({count})</span>}
                   </button>
                 );
               })}
             </div>
-            <div style={{position:"relative",marginBottom:16}}>
-              <span style={{position:"absolute",left:13,top:"50%",transform:"translateY(-50%)",color:"#94a3b8",fontSize:16}}>⌕</span>
-              <input className="field" value={search} onChange={e=>setSearch(e.target.value)}
-                placeholder="Search by name, filename or content…" style={{paddingLeft:38}}/>
+
+            {/* Search + Sort row */}
+            <div style={{display:"flex",gap:10,marginBottom:16,alignItems:"center"}}>
+              <div style={{position:"relative",flex:1}}>
+                <span style={{position:"absolute",left:13,top:"50%",transform:"translateY(-50%)",color:"var(--text4)",fontSize:16}}>⌕</span>
+                <input ref={searchRef} className="field" value={search} onChange={e=>setSearch(e.target.value)}
+                  placeholder="Search by name, filename, content or tag…" style={{paddingLeft:38}}/>
+              </div>
+              <select className="field" value={sortBy} onChange={e=>setSortBy(e.target.value)}
+                style={{width:"auto",minWidth:140,cursor:"pointer"}}>
+                {SORT_OPTS.map(s=><option key={s.id} value={s.id}>{s.label}</option>)}
+              </select>
             </div>
 
-            {files.length===0&&(
+            {/* Bulk actions */}
+            {filtered.length>1&&(
+              <div style={{display:"flex",gap:8,marginBottom:12}}>
+                <button className="btn btn-ghost" onClick={()=>bulkDownload(filtered)} title="Download all as ZIP">
+                  📦 Download {filtered.length} files as ZIP
+                </button>
+              </div>
+            )}
+
+            {/* Loading skeleton */}
+            {loadingFiles&&files.length===0&&(
+              <div>
+                {[1,2,3].map(i=>(
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:14,padding:"16px 18px",border:"1.5px solid var(--border)",borderRadius:14,marginBottom:10}}>
+                    <div className="skel" style={{width:42,height:42,borderRadius:"50%"}}/>
+                    <div style={{flex:1}}>
+                      <div className="skel" style={{width:"60%",height:14,marginBottom:8}}/>
+                      <div className="skel" style={{width:"40%",height:10}}/>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!loadingFiles&&files.length===0&&(
               <div className="empty">
                 <p style={{fontSize:15,fontWeight:600,marginBottom:6}}>No files yet</p>
-                <p style={{fontSize:13,color:"#64748b",marginBottom:16}}>Upload your first skill.md</p>
+                <p style={{fontSize:13,color:"var(--text3)",marginBottom:16}}>Upload your first skill.md</p>
                 <button className="btn btn-blue" onClick={()=>setTab("upload")}>Upload now</button>
               </div>
             )}
-            {files.length>0&&filtered.length===0&&<p style={{textAlign:"center",color:"#94a3b8",fontSize:13,padding:"2rem"}}>No results.</p>}
+            {files.length>0&&filtered.length===0&&<p style={{textAlign:"center",color:"var(--text4)",fontSize:13,padding:"2rem"}}>No results.</p>}
 
-            {filtered.map(f=>{
+            {/* ── File cards ── */}
+            {paged.map(f=>{
               const {bg,c} = ac(f.uploader);
               const open = preview?.id===f.id;
               return (
                 <div key={f.id} className={`file-card${open?" file-card-open":""}`}>
                   <div style={{display:"flex",alignItems:"center",gap:14,padding:"16px 18px"}}>
-                    <div className="avatar" style={{width:42,height:42,fontSize:13,background:bg,color:c}}>{ini(f.uploader)}</div>
+                    {/* Avatar — click to filter by member */}
+                    <div className="avatar" style={{width:42,height:42,fontSize:13,background:bg,color:c,cursor:"pointer"}}
+                      onClick={()=>setMemberView(f.uploader)} title={`View all by ${f.uploader}`}>{ini(f.uploader)}</div>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3,flexWrap:"wrap"}}>
-                        <span style={{fontSize:14,fontWeight:600,color:"#1e293b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.title||f.filename}</span>
+                        <span style={{fontSize:14,fontWeight:600,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.title||f.filename}</span>
                         <span className="badge">MD</span>
+                        {f.version>1&&<span style={{fontSize:10,padding:"1px 6px",borderRadius:10,fontWeight:600,background:"var(--yellow-bg)",color:"var(--yellow-c)"}}>v{f.version}</span>}
                         {(() => { const cat=catBy(f.category); return cat&&(
                           <span style={{fontSize:11,padding:"2px 8px",borderRadius:20,fontWeight:600,background:cat.bg,color:cat.c,border:`1px solid ${cat.border}`,display:"inline-flex",alignItems:"center",gap:3}}>
                             <span>{cat.icon}</span>{cat.label}
                           </span>
                         ); })()}
-                        {f.folder&&f.folder!=="General"&&<span style={{fontSize:11,padding:"2px 8px",borderRadius:20,fontWeight:600,background:"#fefce8",color:"#854d0e"}}>📁 {f.folder}</span>}
+                        {f.folder&&f.folder!=="General"&&<span style={{fontSize:11,padding:"2px 8px",borderRadius:20,fontWeight:600,background:"var(--yellow-bg)",color:"var(--yellow-c)"}}>📁 {f.folder}</span>}
                       </div>
-                      {f.desc&&<p style={{fontSize:12,color:"#475569",margin:"0 0 3px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.desc}</p>}
+                      {f.desc&&<p style={{fontSize:12,color:"var(--text2)",margin:"0 0 3px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.desc}</p>}
+                      {f.tags&&f.tags.length>0&&(
+                        <div style={{display:"flex",gap:3,flexWrap:"wrap",marginBottom:3}}>
+                          {f.tags.map(t=><span key={t} className="tag">{t}</span>)}
+                        </div>
+                      )}
                       <div className="meta">
-                        <span style={{fontWeight:500,color:"#475569"}}>{f.uploader}</span>
+                        <span style={{fontWeight:500,color:"var(--text2)",cursor:"pointer"}} onClick={()=>setMemberView(f.uploader)}>{f.uploader}</span>
                         {f.email&&<><span className="dot"/><span>{f.email}</span></>}
                         <span className="dot"/><span>{fd(f.ts)}</span>
-                        <span className="dot"/><span>{fs(f.size)}</span>
+                        <span className="dot"/><span>{fsize(f.size)}</span>
                       </div>
                     </div>
-                    <div style={{display:"flex",gap:6,flexShrink:0}}>
+                    <div style={{display:"flex",gap:6,flexShrink:0,flexWrap:"wrap"}}>
+                      {/* Preview */}
                       <button className={`btn ${open?"btn-outline":"btn-ghost"}`} onClick={()=>setPreview(open?null:f)} title={open?"Hide preview":"Preview"}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           {open
@@ -551,40 +935,220 @@ function App() {
                             : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>}
                         </svg>
                       </button>
+                      {/* VS Code */}
+                      <button className={`btn ${vscodePanel===f.id?"btn-outline":"btn-ghost"}`}
+                        onClick={()=>setVscodePanel(vscodePanel===f.id?null:f.id)} title="Open in VS Code"
+                        style={vscodePanel===f.id?{borderColor:"var(--blue)",background:"var(--blue-bg)",color:"var(--blue)"}:{}}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M16 3l5 2.5v13L16 21l-11-5.5L16 3z"/><path d="M5 15.5L10 12 5 8.5"/><path d="M16 3v18"/>
+                        </svg>
+                      </button>
+                      {/* Edit */}
+                      <button className="btn btn-ghost" onClick={()=>openEdit(f)} title="Edit">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                      </button>
+                      {/* Download */}
                       <button className="btn btn-ghost" onClick={()=>download(f)} title="Download">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
                         </svg>
                       </button>
-                      <button className="btn btn-ghost" onClick={()=>deleteFile(f)} title="Delete" style={{borderColor:"#fecaca",color:"#dc2626"}}
-                        onMouseEnter={e=>{e.currentTarget.style.background="#fef2f2";e.currentTarget.style.borderColor="#f87171";}}
-                        onMouseLeave={e=>{e.currentTarget.style.background="#f8fafc";e.currentTarget.style.borderColor="#fecaca";}}>
+                      {/* Export PDF */}
+                      <button className="btn btn-ghost" onClick={()=>exportPdf(f)} title="Export as PDF">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                        </svg>
+                      </button>
+                      {/* Delete */}
+                      <button className="btn btn-ghost" onClick={()=>{setDeleteModal(f);setDeletePwd("");}} title="Delete"
+                        style={{borderColor:"var(--red-border)",color:"var(--red)"}}
+                        onMouseEnter={e=>{e.currentTarget.style.background="var(--red-bg)";e.currentTarget.style.borderColor="#f87171";}}
+                        onMouseLeave={e=>{e.currentTarget.style.background="var(--bg)";e.currentTarget.style.borderColor="var(--red-border)";}}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
                         </svg>
                       </button>
                     </div>
                   </div>
-                  {open&&<div style={{padding:"0 18px 16px"}}><pre className="pre">{f.content}</pre></div>}
+
+                  {/* ── VS Code Panel (fixed) ── */}
+                  {vscodePanel===f.id&&(
+                    <div style={{padding:"0 18px 16px"}}>
+                      <div style={{borderRadius:12,overflow:"hidden",border:"1.5px solid var(--green-border)"}}>
+                        <div style={{background:"linear-gradient(90deg,#ecfdf5,#f0fdf4)",padding:"14px 18px",borderLeft:"4px solid #10b981",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                          <div style={{display:"flex",alignItems:"center",gap:8}}>
+                            <span style={{fontSize:13,color:"#065f46"}}>Save</span>
+                            <code style={{background:"#d1fae5",color:"#065f46",padding:"2px 8px",borderRadius:4,fontSize:12,fontWeight:600}}>{f.filename}</code>
+                            <span style={{fontSize:13,color:"#065f46"}}>to your local environment</span>
+                          </div>
+                          <span style={{fontSize:13,color:"#6b7280",cursor:"pointer",fontWeight:500}} onClick={()=>setVscodePanel(null)}>✕</span>
+                        </div>
+                        <div style={{background:"#1a1a2e",padding:18}}>
+                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0078d4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M16 3l5 2.5v13L16 21l-11-5.5L16 3z"/><path d="M5 15.5L10 12 5 8.5"/><path d="M16 3v18"/>
+                              </svg>
+                              <span style={{fontSize:14,fontWeight:600,color:"#fff"}}>VS Code Actions</span>
+                            </div>
+                            <span style={{fontSize:10,fontWeight:600,color:"#10b981",background:"rgba(16,185,129,.15)",padding:"3px 10px",borderRadius:20,border:"1px solid rgba(16,185,129,.3)"}}>Recommended</span>
+                          </div>
+                          {[
+                            {icon:"📂",iconBg:"#f59e0b",label:"Open in VS Code",sub:"Save file + launches VS Code via vscode:// protocol",action:()=>openInVSCode(f)},
+                            {icon:"📋",iconBg:"#f97316",label:"Copy content to clipboard",sub:"Paste into a new file in VS Code with Ctrl+V",action:()=>copyToClipboard(f)},
+                            {icon:"📁",iconBg:"#10b981",label:"Save to workspace folder",sub:"Pick your VS Code project folder — file saves directly",action:()=>saveToWorkspace(f)},
+                          ].map((item,i)=>(
+                            <button key={i} onClick={item.action}
+                              style={{width:"100%",display:"flex",alignItems:"center",gap:14,padding:"14px 16px",borderRadius:10,border:"1px solid #2a2a40",background:"#222238",color:"#e2e8f0",cursor:"pointer",fontFamily:"Inter,sans-serif",marginBottom:8,transition:"all .15s",textAlign:"left"}}
+                              onMouseEnter={e=>{e.currentTarget.style.background="#2d2d48";e.currentTarget.style.borderColor="#0078d4";}}
+                              onMouseLeave={e=>{e.currentTarget.style.background="#222238";e.currentTarget.style.borderColor="#2a2a40";}}>
+                              <div style={{width:36,height:36,borderRadius:8,background:item.iconBg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{item.icon}</div>
+                              <div style={{flex:1,minWidth:0}}>
+                                <div style={{fontSize:13,fontWeight:600,color:"#fff"}}>{item.label}</div>
+                                <div style={{fontSize:11,color:"#8b8fa3",marginTop:2}}>{item.sub}</div>
+                              </div>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><polyline points="9 18 15 12 9 6"/></svg>
+                            </button>
+                          ))}
+                          <div style={{marginTop:12}}>
+                            <span style={{fontSize:10,fontWeight:600,color:"#6b7280",textTransform:"uppercase",letterSpacing:".06em"}}>Or run in terminal</span>
+                            <div style={{background:"#111122",borderRadius:8,padding:"10px 14px",marginTop:6,fontFamily:"'Cascadia Code',Consolas,monospace",fontSize:12,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                              <span><span style={{color:"#6b7280"}}>$ </span><span style={{color:"#fff"}}>code --add </span><span style={{color:"#10b981"}}>{f.filename}</span></span>
+                              <span style={{color:"#6b7280",cursor:"pointer",fontSize:11,fontFamily:"Inter,sans-serif"}}
+                                onClick={()=>{navigator.clipboard.writeText(`code --add ${f.filename}`);toast_("Command copied!");}}>Copy</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{background:"#f0fdf4",padding:"12px 18px",display:"flex",gap:10}}>
+                          <button onClick={()=>saveToMCPFolder(f)}
+                            style={{flex:1,display:"flex",alignItems:"center",gap:10,padding:"12px 14px",borderRadius:10,border:"1.5px solid #d1fae5",background:"#fff",cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}
+                            onMouseEnter={e=>e.currentTarget.style.borderColor="#10b981"}
+                            onMouseLeave={e=>e.currentTarget.style.borderColor="#d1fae5"}>
+                            <span style={{fontSize:20}}>🤖</span>
+                            <div style={{textAlign:"left"}}>
+                              <div style={{fontSize:12,fontWeight:600,color:"#1e293b"}}>Claude MCP folder</div>
+                              <div style={{fontSize:10,color:"#6b7280",marginTop:1}}>Saves to .claude/ subfolder</div>
+                            </div>
+                          </button>
+                          <button onClick={()=>saveToWorkspace(f)}
+                            style={{flex:1,display:"flex",alignItems:"center",gap:10,padding:"12px 14px",borderRadius:10,border:"1.5px solid #d1fae5",background:"#fff",cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}
+                            onMouseEnter={e=>e.currentTarget.style.borderColor="#10b981"}
+                            onMouseLeave={e=>e.currentTarget.style.borderColor="#d1fae5"}>
+                            <span style={{fontSize:20}}>📁</span>
+                            <div style={{textAlign:"left"}}>
+                              <div style={{fontSize:12,fontWeight:600,color:"#1e293b"}}>Custom folder</div>
+                              <div style={{fontSize:10,color:"#6b7280",marginTop:1}}>Pick any location</div>
+                            </div>
+                          </button>
+                        </div>
+                        <div style={{background:"#f0fdf4",padding:"0 18px 12px",display:"flex",alignItems:"center",gap:6}}>
+                          <span style={{color:"#f59e0b",fontSize:12}}>⚡</span>
+                          <span style={{fontSize:10.5,color:"#6b7280"}}>"Open in VS Code" requires VS Code installed. "Save to folder" requires Chrome or Edge.</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── Preview panel (rendered markdown + raw toggle) ── */}
+                  {open&&(
+                    <div style={{padding:"0 18px 16px"}}>
+                      <div style={{display:"flex",gap:6,marginBottom:4}}>
+                        <button className={`btn ${previewMode==="rendered"?"btn-outline":"btn-ghost"}`} onClick={()=>setPreviewMode("rendered")} style={{padding:"4px 10px",fontSize:11}}>Rendered</button>
+                        <button className={`btn ${previewMode==="raw"?"btn-outline":"btn-ghost"}`} onClick={()=>setPreviewMode("raw")} style={{padding:"4px 10px",fontSize:11}}>Raw</button>
+                      </div>
+                      {previewMode==="rendered"
+                        ? <div className="md-body" style={{background:"var(--bg)",border:"1px solid var(--border)",borderRadius:10}} dangerouslySetInnerHTML={renderMd(f.content)}/>
+                        : <pre className="pre">{f.content}</pre>}
+                    </div>
+                  )}
                 </div>
               );
             })}
 
+            {/* Load more / pagination */}
+            {filtered.length > visibleCount && (
+              <div style={{textAlign:"center",padding:"16px 0"}}>
+                <button className="btn btn-outline" onClick={()=>setVisibleCount(v=>v+PAGE_SIZE)}>
+                  Load more ({filtered.length - visibleCount} remaining)
+                </button>
+              </div>
+            )}
+
             {files.length>0&&(
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:"1px solid #f1f5f9",paddingTop:14,marginTop:8}}>
-                <span style={{fontSize:12,color:"#94a3b8"}}>{files.length} file{files.length!==1?"s":""} · {uniq} contributor{uniq!==1?"s":""}</span>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:"1px solid var(--border2)",paddingTop:14,marginTop:8}}>
+                <span style={{fontSize:12,color:"var(--text4)"}}>{filtered.length} file{filtered.length!==1?"s":""} · {uniq} contributor{uniq!==1?"s":""}</span>
                 <button className="btn btn-outline" onClick={()=>setTab("upload")}>+ Upload yours</button>
               </div>
             )}
           </div>
         )}
       </div>
+
+      {/* ════════ Edit Modal ════════ */}
+      <Modal open={!!editModal} onClose={()=>setEditModal(null)} title={`Edit: ${editModal?.title||editModal?.filename||""}`}>
+        <div style={{marginBottom:14}}>
+          <span className="lbl">Title</span>
+          <input className="field" value={editData.title||""} onChange={e=>setEditData(d=>({...d,title:e.target.value}))}/>
+        </div>
+        <div style={{marginBottom:14}}>
+          <span className="lbl">Description</span>
+          <textarea className="field" value={editData.description||""} onChange={e=>setEditData(d=>({...d,description:e.target.value}))} rows={2} style={{resize:"vertical",lineHeight:1.6}}/>
+        </div>
+        <div style={{marginBottom:14}}>
+          <span className="lbl">Folder</span>
+          <input className="field" value={editData.folder||""} onChange={e=>setEditData(d=>({...d,folder:e.target.value}))}/>
+        </div>
+        <div style={{marginBottom:14}}>
+          <span className="lbl">Category</span>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+            {CATEGORIES.map(cat=>{
+              const active = editData.category===cat.id;
+              return (
+                <button key={cat.id} type="button" onClick={()=>setEditData(d=>({...d,category:active?"":cat.id}))}
+                  style={{display:"inline-flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:20,
+                    border:`1.5px solid ${active?cat.c:cat.border}`,background:active?cat.bg:"var(--card)",
+                    color:active?cat.c:"var(--text3)",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                  <span>{cat.icon}</span>{cat.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div style={{marginBottom:18}}>
+          <span className="lbl">Tags</span>
+          <TagInput tags={editData.tags||[]} onChange={tags=>setEditData(d=>({...d,tags}))}/>
+        </div>
+        <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+          <button className="btn btn-ghost" onClick={()=>setEditModal(null)}>Cancel</button>
+          <button className="btn btn-blue" onClick={saveEdit} disabled={saving}>{saving?"Saving…":"Save changes"}</button>
+        </div>
+      </Modal>
+
+      {/* ════════ Delete Confirmation Modal ════════ */}
+      <Modal open={!!deleteModal} onClose={()=>setDeleteModal(null)} title="Delete file" width={420}>
+        <div style={{textAlign:"center",marginBottom:16}}>
+          <div style={{width:48,height:48,borderRadius:"50%",background:"var(--red-bg)",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:22,marginBottom:12,border:"1.5px solid var(--red-border)"}}>🗑️</div>
+          <p style={{fontSize:14,fontWeight:600,color:"var(--text)",marginBottom:4}}>Delete "{deleteModal?.title||deleteModal?.filename}"?</p>
+          <p style={{fontSize:12,color:"var(--text3)"}}>This action cannot be undone.</p>
+        </div>
+        <div style={{marginBottom:16}}>
+          <span className="lbl">Enter password to confirm</span>
+          <input className="field" type="password" value={deletePwd} onChange={e=>setDeletePwd(e.target.value)}
+            onKeyDown={e=>{if(e.key==="Enter")deleteFile();}} placeholder="Delete password" autoFocus/>
+        </div>
+        <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+          <button className="btn btn-ghost" onClick={()=>setDeleteModal(null)}>Cancel</button>
+          <button className="btn btn-red" onClick={deleteFile} disabled={!deletePwd||deleting}>{deleting?"Deleting…":"Delete"}</button>
+        </div>
+      </Modal>
     </div>
   );
 }
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<App/>);
+root.render(<ErrorBoundary><App/></ErrorBoundary>);
 </script>
 </body>
 </html>
