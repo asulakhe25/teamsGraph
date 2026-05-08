@@ -1,100 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Team Skills Directory</title>
-<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-:root{
-  --bg:#f8fafc;--card:#fff;--border:#e2e8f0;--border2:#f1f5f9;--text:#1e293b;--text2:#475569;
-  --text3:#64748b;--text4:#94a3b8;--blue:#0078d4;--blue2:#106ebe;--blue-bg:#eff6ff;--blue-border:#bfdbfe;
-  --hover:#69b3f5;--red:#dc2626;--red-bg:#fef2f2;--red-border:#fecaca;--green:#065f46;--green-bg:#ecfdf5;
-  --green-border:#a7f3d0;--yellow-bg:#fefce8;--yellow-c:#854d0e;--yellow-border:#fde68a;
-}
-[data-theme="dark"]{
-  --bg:#0f172a;--card:#1e293b;--border:#334155;--border2:#1e293b;--text:#f1f5f9;--text2:#cbd5e1;
-  --text3:#94a3b8;--text4:#64748b;--blue:#3b82f6;--blue2:#2563eb;--blue-bg:#1e3a5f;--blue-border:#1e40af;
-  --hover:#60a5fa;--red:#ef4444;--red-bg:#450a0a;--red-border:#7f1d1d;--green:#a7f3d0;--green-bg:#064e3b;
-  --green-border:#065f46;--yellow-bg:#422006;--yellow-c:#fde68a;--yellow-border:#854d0e;
-}
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);transition:background .3s,color .3s;}
-.wrap{min-height:100vh;padding:28px 20px;max-width:860px;margin:0 auto;}
-.header-card{background:linear-gradient(135deg,#0078d4,#106ebe);padding:28px;color:#fff;border-radius:16px;margin-bottom:20px;}
-.card{background:var(--card);border-radius:16px;border:1px solid var(--border);transition:background .3s,border .3s;}
-.section{padding:24px;}
-.tab-bar{display:flex;gap:2px;background:var(--border2);border-radius:10px;padding:3px;width:fit-content;margin-bottom:20px;}
-.tab-btn{padding:8px 20px;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;color:var(--text3);}
-.tab-active{background:var(--card);color:var(--blue);box-shadow:0 1px 3px rgba(0,0,0,.1);}
-.tab-inactive{background:transparent;}
-.field{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;outline:none;color:var(--text);background:var(--card);transition:border .15s,background .3s,color .3s;}
-.field:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,120,212,.1);}
-.lbl{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:block;}
-.avatar{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;flex-shrink:0;}
-.file-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:10px;transition:border .15s,box-shadow .15s,background .3s;}
-.file-card:hover{border-color:var(--hover);box-shadow:0 4px 16px rgba(0,120,212,.08);}
-.file-card-open{border-color:var(--blue)!important;}
-.badge{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;background:#dbeafe;color:#1e40af;}
-.meta{font-size:12px;color:var(--text4);display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
-.dot{width:3px;height:3px;border-radius:50%;background:#cbd5e1;flex-shrink:0;}
-.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid;font-family:'Inter',sans-serif;transition:all .15s;}
-.btn-ghost{border-color:var(--border);background:var(--bg);color:var(--text3);}
-.btn-ghost:hover{border-color:var(--hover);background:var(--blue-bg);color:var(--blue);}
-.btn-blue{border-color:var(--blue);background:var(--blue);color:#fff;}
-.btn-blue:hover{background:var(--blue2);}
-.btn-outline{border-color:var(--hover);background:var(--blue-bg);color:var(--blue);}
-.btn-red{border-color:var(--red);background:var(--red);color:#fff;}
-.btn-red:hover{opacity:.85;}
-.drop{border:2px dashed var(--blue-border);border-radius:14px;padding:32px;text-align:center;cursor:pointer;background:var(--bg);transition:all .15s;}
-.drop:hover,.drop-over{border-color:var(--blue);background:var(--blue-bg);}
-.pre{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;font-size:12px;line-height:1.8;font-family:monospace;max-height:300px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;margin-top:12px;color:var(--text);}
-.toast{position:fixed;bottom:24px;right:24px;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.12);animation:up .25s ease;}
-.t-ok{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;}
-.t-err{background:#fef2f2;color:#991b1b;border:1px solid #fecaca;}
-.t-inf{background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;}
-.empty{text-align:center;padding:48px 24px;border:2px dashed var(--border);border-radius:14px;}
-.spin{animation:rot 1s linear infinite;}
-.bar{height:3px;background:var(--border);border-radius:4px;overflow:hidden;margin-top:12px;}
-.bar-fill{height:100%;background:linear-gradient(90deg,#0078d4,#50c0f0);border-radius:4px;animation:prog 1.5s ease-in-out infinite;}
-/* Modal overlay */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;animation:fadeIn .15s ease;}
-.modal{background:var(--card);border-radius:16px;border:1px solid var(--border);max-width:500px;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 48px rgba(0,0,0,.2);animation:scaleIn .2s ease;}
-/* Skeleton loader */
-.skel{border-radius:8px;background:linear-gradient(90deg,var(--border) 25%,var(--border2) 50%,var(--border) 75%);background-size:200%;animation:shimmer 1.5s infinite;}
-/* Markdown rendered content */
-.md-body{font-size:13px;line-height:1.8;color:var(--text);max-height:400px;overflow-y:auto;padding:16px;}
-.md-body h1,.md-body h2,.md-body h3{margin:16px 0 8px;font-weight:600;color:var(--text);}
-.md-body h1{font-size:20px;border-bottom:1px solid var(--border);padding-bottom:6px;}
-.md-body h2{font-size:16px;} .md-body h3{font-size:14px;}
-.md-body p{margin:8px 0;} .md-body ul,.md-body ol{margin:8px 0 8px 20px;}
-.md-body li{margin:4px 0;} .md-body code{background:var(--bg);padding:2px 6px;border-radius:4px;font-size:12px;border:1px solid var(--border);}
-.md-body pre{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;overflow-x:auto;margin:10px 0;}
-.md-body pre code{background:transparent;border:none;padding:0;}
-.md-body blockquote{border-left:3px solid var(--blue);padding:4px 12px;margin:8px 0;color:var(--text2);background:var(--blue-bg);border-radius:0 6px 6px 0;}
-.md-body a{color:var(--blue);}
-.md-body table{border-collapse:collapse;margin:10px 0;width:100%;}
-.md-body th,.md-body td{border:1px solid var(--border);padding:6px 10px;font-size:12px;text-align:left;}
-.md-body th{background:var(--bg);font-weight:600;}
-/* Tag pills */
-.tag{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border);}
-.tag-rm{cursor:pointer;font-size:12px;margin-left:2px;opacity:.6;} .tag-rm:hover{opacity:1;}
-@keyframes up{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
-@keyframes rot{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-@keyframes prog{0%{width:20%}50%{width:75%}100%{width:20%}}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes scaleIn{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
-@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-</style>
-</head>
-<body>
-<div id="root"></div>
-<script type="text/babel">
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
 const PROXY  = "https://teamsgraph.onrender.com";
@@ -318,7 +221,6 @@ function App() {
         tags:f.tags?f.tags.split(",").filter(Boolean):[],
         version:f.version||1, updatedAt:f.updated_at
       }));
-      // New file notification
       if (prevFileCount.current > 0 && loaded.length > prevFileCount.current) {
         const diff = loaded.length - prevFileCount.current;
         setNewCount(diff);
@@ -338,7 +240,6 @@ function App() {
     if (members.length === 0 || Date.now()-smTs > HOUR) loadMembers();
     if (teams.length === 0 || Date.now()-stTs > HOUR) loadTeams();
     loadFiles();
-    // Poll for new files every 60s
     const interval = setInterval(loadFiles, 60000);
     return ()=>clearInterval(interval);
   }, []);  // eslint-disable-line
@@ -382,7 +283,7 @@ function App() {
     toast_(`Downloaded ${f.filename}`);
   };
 
-  // ── VS Code actions (fixed) ──
+  // ── VS Code actions ──
   const openInVSCode = async f => {
     try {
       if (window.showSaveFilePicker) {
@@ -390,11 +291,9 @@ function App() {
         const writable = await handle.createWritable();
         await writable.write(f.content);
         await writable.close();
-        // Open the saved file in VS Code
         window.open(`vscode://file/${handle.name}`, "_self");
         toast_(`Saved & opening in VS Code...`);
       } else {
-        // Fallback: download + attempt protocol
         download(f);
         setTimeout(()=>{ window.location.href = `vscode://file/${f.filename}`; }, 600);
         toast_(`Downloaded — attempting to open VS Code...`);
@@ -433,7 +332,6 @@ function App() {
     try {
       if (window.showDirectoryPicker) {
         const dirHandle = await window.showDirectoryPicker({id:"claude-mcp",startIn:"documents"});
-        // Try to create .claude subfolder
         let target = dirHandle;
         try { target = await dirHandle.getDirectoryHandle(".claude",{create:true}); } catch(e){}
         const fileHandle = await target.getFileHandle(f.filename, {create:true});
@@ -531,7 +429,6 @@ function App() {
       return !q||[f.filename,f.uploader,f.content,f.title||"",f.desc||"",f.folder||"",
         catBy(f.category)?.label||"",...(f.tags||[])].some(s=>s.toLowerCase().includes(q));
     });
-    // Sort
     switch(sortBy){
       case "oldest":  list.sort((a,b)=>a.ts-b.ts); break;
       case "name-az": list.sort((a,b)=>(a.title||a.filename).localeCompare(b.title||b.filename)); break;
@@ -548,7 +445,6 @@ function App() {
   const uniq = new Set(files.map(f=>f.uploader)).size;
   const ready = selMem && selFile;
 
-  // Reset visible count when filters change
   useEffect(()=>setVisibleCount(PAGE_SIZE),[browseFolder,browseCategory,search,sortBy,memberView]);
 
   return (
@@ -572,7 +468,6 @@ function App() {
             <p style={{fontSize:13,color:"rgba(255,255,255,.8)",margin:0}}>dev.azure.com / <b>Sogolytics</b></p>
           </div>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
-            {/* Dark mode toggle */}
             <div onClick={()=>setDarkMode(!darkMode)} title={darkMode?"Light mode":"Dark mode"}
               style={{width:32,height:32,borderRadius:8,background:"rgba(255,255,255,.15)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:16,border:"1px solid rgba(255,255,255,.25)"}}>
               {darkMode?"☀️":"🌙"}
@@ -595,7 +490,7 @@ function App() {
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs + Search */}
       <div className="card">
         <div className="section" style={{paddingBottom:0}}>
           <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
@@ -812,7 +707,6 @@ function App() {
         {/* ════════ Browse Tab ════════ */}
         {tab==="browse"&&(
           <div className="section">
-            {/* Member view banner */}
             {memberView&&(
               <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"var(--blue-bg)",borderRadius:10,border:"1.5px solid var(--blue-border)",marginBottom:14}}>
                 <div className="avatar" style={{width:32,height:32,fontSize:11,background:ac(memberView).bg,color:ac(memberView).c}}>{ini(memberView)}</div>
@@ -824,9 +718,8 @@ function App() {
               </div>
             )}
 
-            {/* ── Compact filter bar ── */}
+            {/* Filter bar */}
             <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:16,flexWrap:"wrap"}}>
-              {/* Folder dropdown */}
               {folders.length>2&&(
                 <select className="field" value={browseFolder} onChange={e=>setBrowseFolder(e.target.value)}
                   style={{width:"auto",minWidth:0,cursor:"pointer",fontSize:12,fontWeight:600,padding:"6px 28px 6px 10px",borderRadius:8,color:browseFolder!=="All"?"var(--blue)":"var(--text3)",
@@ -835,8 +728,6 @@ function App() {
                   {folders.filter(f=>f!=="All").map(f=><option key={f} value={f}>📁 {f}</option>)}
                 </select>
               )}
-
-              {/* Category dropdown */}
               <select className="field" value={browseCategory} onChange={e=>setBrowseCategory(e.target.value)}
                 style={{width:"auto",minWidth:0,cursor:"pointer",fontSize:12,fontWeight:600,padding:"6px 28px 6px 10px",borderRadius:8,color:browseCategory!=="All"?"var(--blue)":"var(--text3)",
                   borderColor:browseCategory!=="All"?"var(--blue)":"var(--border)",background:browseCategory!=="All"?"var(--blue-bg)":"var(--card)"}}>
@@ -846,16 +737,11 @@ function App() {
                   return <option key={cat.id} value={cat.id}>{cat.icon} {cat.label}{count?` (${count})`:""}</option>;
                 })}
               </select>
-
-              {/* Sort dropdown */}
               <select className="field" value={sortBy} onChange={e=>setSortBy(e.target.value)}
                 style={{width:"auto",minWidth:0,cursor:"pointer",fontSize:12,fontWeight:600,padding:"6px 28px 6px 10px",borderRadius:8,color:"var(--text3)"}}>
                 {SORT_OPTS.map(s=><option key={s.id} value={s.id}>{s.label}</option>)}
               </select>
-
               <div style={{flex:1}}/>
-
-              {/* Active filter chips */}
               {(browseFolder!=="All"||browseCategory!=="All"||search)&&(
                 <button onClick={()=>{setBrowseFolder("All");setBrowseCategory("All");setSearch("");}}
                   style={{display:"inline-flex",alignItems:"center",gap:4,padding:"5px 10px",borderRadius:6,border:"1.5px solid var(--red-border)",
@@ -863,8 +749,6 @@ function App() {
                   Clear filters ✕
                 </button>
               )}
-
-              {/* Bulk ZIP — compact icon */}
               {filtered.length>1&&(
                 <button className="btn btn-ghost" onClick={()=>bulkDownload(filtered)} title={`Download ${filtered.length} files as ZIP`}
                   style={{padding:"6px 10px",fontSize:11}}>
@@ -897,14 +781,13 @@ function App() {
             )}
             {files.length>0&&filtered.length===0&&<p style={{textAlign:"center",color:"var(--text4)",fontSize:13,padding:"2rem"}}>No results.</p>}
 
-            {/* ── File cards ── */}
+            {/* File cards */}
             {paged.map(f=>{
               const {bg,c} = ac(f.uploader);
               const open = preview?.id===f.id;
               return (
                 <div key={f.id} className={`file-card${open?" file-card-open":""}`}>
                   <div style={{display:"flex",alignItems:"center",gap:14,padding:"16px 18px"}}>
-                    {/* Avatar — click to filter by member */}
                     <div className="avatar" style={{width:42,height:42,fontSize:13,background:bg,color:c,cursor:"pointer"}}
                       onClick={()=>setMemberView(f.uploader)} title={`View all by ${f.uploader}`}>{ini(f.uploader)}</div>
                     <div style={{flex:1,minWidth:0}}>
@@ -933,7 +816,6 @@ function App() {
                       </div>
                     </div>
                     <div style={{display:"flex",gap:6,flexShrink:0,flexWrap:"wrap"}}>
-                      {/* Preview */}
                       <button className={`btn ${open?"btn-outline":"btn-ghost"}`} onClick={()=>setPreview(open?null:f)} title={open?"Hide preview":"Preview"}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           {open
@@ -941,7 +823,6 @@ function App() {
                             : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>}
                         </svg>
                       </button>
-                      {/* VS Code */}
                       <button className={`btn ${vscodePanel===f.id?"btn-outline":"btn-ghost"}`}
                         onClick={()=>setVscodePanel(vscodePanel===f.id?null:f.id)} title="Open in VS Code"
                         style={vscodePanel===f.id?{borderColor:"var(--blue)",background:"var(--blue-bg)",color:"var(--blue)"}:{}}>
@@ -949,25 +830,21 @@ function App() {
                           <path d="M16 3l5 2.5v13L16 21l-11-5.5L16 3z"/><path d="M5 15.5L10 12 5 8.5"/><path d="M16 3v18"/>
                         </svg>
                       </button>
-                      {/* Edit */}
                       <button className="btn btn-ghost" onClick={()=>openEdit(f)} title="Edit">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                         </svg>
                       </button>
-                      {/* Download */}
                       <button className="btn btn-ghost" onClick={()=>download(f)} title="Download">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
                         </svg>
                       </button>
-                      {/* Export PDF */}
                       <button className="btn btn-ghost" onClick={()=>exportPdf(f)} title="Export as PDF">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
                         </svg>
                       </button>
-                      {/* Delete */}
                       <button className="btn btn-ghost" onClick={()=>{setDeleteModal(f);setDeletePwd("");}} title="Delete"
                         style={{borderColor:"var(--red-border)",color:"var(--red)"}}
                         onMouseEnter={e=>{e.currentTarget.style.background="var(--red-bg)";e.currentTarget.style.borderColor="#f87171";}}
@@ -979,7 +856,7 @@ function App() {
                     </div>
                   </div>
 
-                  {/* ── VS Code Panel (fixed) ── */}
+                  {/* VS Code Panel */}
                   {vscodePanel===f.id&&(
                     <div style={{padding:"0 18px 16px"}}>
                       <div style={{borderRadius:12,overflow:"hidden",border:"1.5px solid var(--green-border)"}}>
@@ -1057,7 +934,7 @@ function App() {
                     </div>
                   )}
 
-                  {/* ── Preview panel (rendered markdown + raw toggle) ── */}
+                  {/* Preview panel */}
                   {open&&(
                     <div style={{padding:"0 18px 16px"}}>
                       <div style={{display:"flex",gap:6,marginBottom:4}}>
@@ -1073,7 +950,6 @@ function App() {
               );
             })}
 
-            {/* Load more / pagination */}
             {filtered.length > visibleCount && (
               <div style={{textAlign:"center",padding:"16px 0"}}>
                 <button className="btn btn-outline" onClick={()=>setVisibleCount(v=>v+PAGE_SIZE)}>
@@ -1092,7 +968,7 @@ function App() {
         )}
       </div>
 
-      {/* ════════ Edit Modal ════════ */}
+      {/* Edit Modal */}
       <Modal open={!!editModal} onClose={()=>setEditModal(null)} title={`Edit: ${editModal?.title||editModal?.filename||""}`}>
         <div style={{marginBottom:14}}>
           <span className="lbl">Title</span>
@@ -1132,7 +1008,7 @@ function App() {
         </div>
       </Modal>
 
-      {/* ════════ Delete Confirmation Modal ════════ */}
+      {/* Delete Confirmation Modal */}
       <Modal open={!!deleteModal} onClose={()=>setDeleteModal(null)} title="Delete file" width={420}>
         <div style={{textAlign:"center",marginBottom:16}}>
           <div style={{width:48,height:48,borderRadius:"50%",background:"var(--red-bg)",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:22,marginBottom:12,border:"1.5px solid var(--red-border)"}}>🗑️</div>
@@ -1155,6 +1031,3 @@ function App() {
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(<ErrorBoundary><App/></ErrorBoundary>);
-</script>
-</body>
-</html>

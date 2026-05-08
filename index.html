@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Team Skills Directory</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css"/>
+
+  <!-- CDN Libraries -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- Load app.jsx at runtime via fetch + Babel -->
+  <script>
+    fetch('app.jsx')
+      .then(r => r.text())
+      .then(code => {
+        const transformed = Babel.transform(code, { presets: ['react'] }).code;
+        const script = document.createElement('script');
+        script.textContent = transformed;
+        document.body.appendChild(script);
+      })
+      .catch(err => {
+        document.getElementById('root').innerHTML =
+          '<div style="padding:40px;text-align:center;font-family:Inter,sans-serif;">' +
+          '<h2>Failed to load app.jsx</h2>' +
+          '<p style="color:#64748b;margin-top:8px;">If opening via file://, use a local server instead:<br/>' +
+          '<code style="background:#f1f5f9;padding:4px 8px;border-radius:4px;margin-top:8px;display:inline-block;">npx serve .</code></p>' +
+          '<p style="color:#dc2626;margin-top:12px;font-size:13px;">' + err.message + '</p></div>';
+      });
+  </script>
+</body>
+</html>

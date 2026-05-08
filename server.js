@@ -34,6 +34,10 @@ app.use(cors({
 app.options("*", cors());
 app.use(express.json({ limit: "5mb" }));
 
+// ── Serve static frontend files ──
+const path = require("path");
+app.use(express.static(path.join(__dirname)));
+
 // ── Simple in-memory rate limiter ──
 const rateBuckets = {};
 function rateLimit(windowMs, maxReqs) {
