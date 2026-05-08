@@ -469,13 +469,13 @@ function App() {
           </div>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
             <div onClick={()=>setDarkMode(!darkMode)} title={darkMode?"Light mode":"Dark mode"}
-              style={{width:32,height:32,borderRadius:8,background:"rgba(255,255,255,.15)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:16,border:"1px solid rgba(255,255,255,.25)"}}>
-              {darkMode?"☀️":"🌙"}
+              style={{display:"flex",alignItems:"center",gap:5,fontSize:11,padding:"5px 12px",borderRadius:20,background:"rgba(255,255,255,.15)",color:"#fff",border:"1px solid rgba(255,255,255,.25)",cursor:"pointer",fontWeight:500}}>
+              <span style={{fontSize:14,lineHeight:1}}>{darkMode?"☀️":"🌙"}</span> {darkMode?"Light":"Dark"}
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:6,fontSize:11,padding:"4px 12px",borderRadius:20,background:"rgba(255,255,255,.15)",color:"#fff",border:"1px solid rgba(255,255,255,.25)",cursor:"pointer"}} onClick={loadMembers}>
+            <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,padding:"5px 12px",borderRadius:20,background:"rgba(255,255,255,.15)",color:"#fff",border:"1px solid rgba(255,255,255,.25)",cursor:"pointer",fontWeight:500}} onClick={loadMembers}>
               {fetching
                 ? <><svg className="spin" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Loading…</>
-                : <>● {members.length} members ↻</>}
+                : <><span style={{width:6,height:6,borderRadius:"50%",background:"#4ade80",display:"inline-block"}}></span> {members.length} members ↻</>}
             </div>
           </div>
         </div>
@@ -495,8 +495,13 @@ function App() {
         <div className="section" style={{paddingBottom:0}}>
           <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
             <div className="tab-bar" style={{marginBottom:0}}>
-              {[["upload","Upload"],["browse",`Browse (${files.length})`]].map(([t,l])=>(
-                <button key={t} className={`tab-btn ${tab===t?"tab-active":"tab-inactive"}`} onClick={()=>setTab(t)}>{l}</button>
+              {[["upload","Upload","M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4|M17 8l-5-5-5 5|M12 3v12"],["browse",`Browse (${files.length})`,"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z|M9 22V12h6v10"]].map(([t,l,paths])=>(
+                <button key={t} className={`tab-btn ${tab===t?"tab-active":"tab-inactive"}`} onClick={()=>setTab(t)} style={{display:"inline-flex",alignItems:"center",gap:6}}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    {paths.split("|").map((d,i)=><path key={i} d={d}/>)}
+                  </svg>
+                  {l}
+                </button>
               ))}
             </div>
             {tab==="browse"&&(
@@ -516,7 +521,7 @@ function App() {
 
         {/* ════════ Upload Tab ════════ */}
         {tab==="upload"&&(
-          <div className="section" style={{maxWidth:540}}>
+          <div className="section">
             {members.length===0?(
               <div className="empty">
                 {fetching
@@ -525,170 +530,185 @@ function App() {
               </div>
             ):(
               <>
-                {/* Member picker */}
-                <div style={{marginBottom:16}} ref={memRef}>
-                  <span className="lbl">Select team member</span>
-                  <div style={{position:"relative"}}>
-                    <input className="field" placeholder="Search members by name or email…"
-                      value={selMem&&!memDrop ? selMem.displayName : memSearch}
-                      onFocus={()=>{setMemDrop(true);if(selMem)setMemSearch("");}}
-                      onChange={e=>{setMemSearch(e.target.value);setMemDrop(true);if(selMem){setSelMem(null);}}}
-                      style={{paddingRight:selMem?36:14}}/>
+                {/* ── Row 1: Member + Team (side by side) ── */}
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
+                  {/* Member picker */}
+                  <div ref={memRef}>
+                    <span className="lbl">Team member</span>
+                    <div style={{position:"relative"}}>
+                      <input className="field" placeholder="Search members…"
+                        value={selMem&&!memDrop ? selMem.displayName : memSearch}
+                        onFocus={()=>{setMemDrop(true);if(selMem)setMemSearch("");}}
+                        onChange={e=>{setMemSearch(e.target.value);setMemDrop(true);if(selMem){setSelMem(null);}}}
+                        style={{paddingRight:selMem?36:14}}/>
+                      {selMem&&!memDrop&&(
+                        <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",cursor:"pointer",fontSize:14,color:"var(--text4)"}}
+                          onClick={()=>{setSelMem(null);setMemSearch("");setMemDrop(true);}}>✕</span>
+                      )}
+                      {memDrop&&(
+                        <div style={{position:"absolute",top:"100%",left:0,right:0,zIndex:50,background:"var(--card)",border:"1.5px solid var(--border)",borderRadius:10,marginTop:4,maxHeight:220,overflowY:"auto",boxShadow:"0 8px 24px rgba(0,0,0,.15)"}}>
+                          {filteredMembers.length===0&&<div style={{padding:"12px 14px",fontSize:13,color:"var(--text4)"}}>No members found</div>}
+                          {filteredMembers.map(m=>{
+                            const {bg,c}=ac(m.displayName);
+                            return (
+                              <div key={m.id} onClick={()=>{setSelMem(m);setMemSearch("");setMemDrop(false);}}
+                                style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",cursor:"pointer",transition:"background .1s",borderBottom:"1px solid var(--border2)"}}
+                                onMouseEnter={e=>e.currentTarget.style.background="var(--blue-bg)"}
+                                onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                                <div className="avatar" style={{width:28,height:28,fontSize:10,background:bg,color:c}}>{ini(m.displayName)}</div>
+                                <div style={{flex:1,minWidth:0}}>
+                                  <p style={{margin:0,fontSize:12,fontWeight:600,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.displayName}</p>
+                                  {m.email&&<p style={{margin:0,fontSize:10,color:"var(--text3)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.email}</p>}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                     {selMem&&!memDrop&&(
-                      <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",cursor:"pointer",fontSize:14,color:"var(--text4)"}}
-                        onClick={()=>{setSelMem(null);setMemSearch("");setMemDrop(true);}}>✕</span>
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8,padding:"8px 12px",background:"var(--blue-bg)",borderRadius:8,border:"1.5px solid var(--blue-border)"}}>
+                        <div className="avatar" style={{width:28,height:28,fontSize:10,background:ac(selMem.displayName).bg,color:ac(selMem.displayName).c}}>{ini(selMem.displayName)}</div>
+                        <div style={{flex:1,minWidth:0}}>
+                          <p style={{margin:0,fontSize:12,fontWeight:600,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{selMem.displayName}</p>
+                          <p style={{margin:0,fontSize:10,color:"var(--blue)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{selMem.email||"Azure DevOps member"}</p>
+                        </div>
+                      </div>
                     )}
-                    {memDrop&&(
-                      <div style={{position:"absolute",top:"100%",left:0,right:0,zIndex:50,background:"var(--card)",border:"1.5px solid var(--border)",borderRadius:10,marginTop:4,maxHeight:220,overflowY:"auto",boxShadow:"0 8px 24px rgba(0,0,0,.15)"}}>
-                        {filteredMembers.length===0&&<div style={{padding:"12px 14px",fontSize:13,color:"var(--text4)"}}>No members found</div>}
-                        {filteredMembers.map(m=>{
-                          const {bg,c}=ac(m.displayName);
-                          return (
-                            <div key={m.id} onClick={()=>{setSelMem(m);setMemSearch("");setMemDrop(false);}}
-                              style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",cursor:"pointer",transition:"background .1s",borderBottom:"1px solid var(--border2)"}}
+                  </div>
+
+                  {/* Team/folder picker */}
+                  <div ref={teamRef}>
+                    <span className="lbl">Team / Folder</span>
+                    <div style={{position:"relative"}}>
+                      <input className="field" placeholder="Search teams…"
+                        value={selTeam&&selTeam!=="__new__"&&!teamDrop ? selTeam : teamSearch}
+                        onFocus={()=>{setTeamDrop(true);if(selTeam&&selTeam!=="__new__")setTeamSearch("");}}
+                        onChange={e=>{setTeamSearch(e.target.value);setTeamDrop(true);if(selTeam&&selTeam!=="__new__"){setSelTeam("");setCustomFolder("");}}}
+                        style={{paddingRight:selTeam&&selTeam!=="__new__"?36:14}}/>
+                      {selTeam&&selTeam!=="__new__"&&!teamDrop&&(
+                        <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",cursor:"pointer",fontSize:14,color:"var(--text4)"}}
+                          onClick={()=>{setSelTeam("");setTeamSearch("");setTeamDrop(true);}}>✕</span>
+                      )}
+                      {teamDrop&&(
+                        <div style={{position:"absolute",top:"100%",left:0,right:0,zIndex:50,background:"var(--card)",border:"1.5px solid var(--border)",borderRadius:10,marginTop:4,maxHeight:220,overflowY:"auto",boxShadow:"0 8px 24px rgba(0,0,0,.15)"}}>
+                          <div onClick={()=>{setSelTeam("");setTeamSearch("");setTeamDrop(false);setCustomFolder("");}}
+                            style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",cursor:"pointer",borderBottom:"1px solid var(--border2)"}}
+                            onMouseEnter={e=>e.currentTarget.style.background="var(--bg)"}
+                            onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                            <span style={{fontSize:14}}>📂</span>
+                            <span style={{fontSize:13,fontWeight:500,color:"var(--text3)"}}>General (default)</span>
+                          </div>
+                          {filteredFolders.map(f=>(
+                            <div key={f.id} onClick={()=>{setSelTeam(f.name);setTeamSearch("");setTeamDrop(false);setCustomFolder("");}}
+                              style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",cursor:"pointer",borderBottom:"1px solid var(--border2)"}}
                               onMouseEnter={e=>e.currentTarget.style.background="var(--blue-bg)"}
                               onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                              <div className="avatar" style={{width:32,height:32,fontSize:11,background:bg,color:c}}>{ini(m.displayName)}</div>
+                              <span style={{fontSize:14}}>{f.type==="team"?"👥":"📁"}</span>
                               <div style={{flex:1,minWidth:0}}>
-                                <p style={{margin:0,fontSize:13,fontWeight:600,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.displayName}</p>
-                                {m.email&&<p style={{margin:0,fontSize:11,color:"var(--text3)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.email}</p>}
+                                <p style={{margin:0,fontSize:13,fontWeight:600,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.label}</p>
                               </div>
                             </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                  {selMem&&!memDrop&&(
-                    <div style={{display:"flex",alignItems:"center",gap:10,marginTop:10,padding:"10px 14px",background:"var(--blue-bg)",borderRadius:10,border:"1.5px solid var(--blue-border)"}}>
-                      <div className="avatar" style={{width:36,height:36,fontSize:12,background:ac(selMem.displayName).bg,color:ac(selMem.displayName).c}}>{ini(selMem.displayName)}</div>
-                      <div>
-                        <p style={{margin:0,fontSize:13,fontWeight:600,color:"var(--text)"}}>{selMem.displayName}</p>
-                        <p style={{margin:0,fontSize:11,color:"var(--blue)"}}>{selMem.email||"Azure DevOps member"}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Team/folder picker */}
-                <div style={{marginBottom:16}} ref={teamRef}>
-                  <span className="lbl">Team / Folder</span>
-                  <div style={{position:"relative"}}>
-                    <input className="field" placeholder="Search teams or folders…"
-                      value={selTeam&&selTeam!=="__new__"&&!teamDrop ? selTeam : teamSearch}
-                      onFocus={()=>{setTeamDrop(true);if(selTeam&&selTeam!=="__new__")setTeamSearch("");}}
-                      onChange={e=>{setTeamSearch(e.target.value);setTeamDrop(true);if(selTeam&&selTeam!=="__new__"){setSelTeam("");setCustomFolder("");}}}
-                      style={{paddingRight:selTeam&&selTeam!=="__new__"?36:14}}/>
-                    {selTeam&&selTeam!=="__new__"&&!teamDrop&&(
-                      <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",cursor:"pointer",fontSize:14,color:"var(--text4)"}}
-                        onClick={()=>{setSelTeam("");setTeamSearch("");setTeamDrop(true);}}>✕</span>
-                    )}
-                    {teamDrop&&(
-                      <div style={{position:"absolute",top:"100%",left:0,right:0,zIndex:50,background:"var(--card)",border:"1.5px solid var(--border)",borderRadius:10,marginTop:4,maxHeight:220,overflowY:"auto",boxShadow:"0 8px 24px rgba(0,0,0,.15)"}}>
-                        <div onClick={()=>{setSelTeam("");setTeamSearch("");setTeamDrop(false);setCustomFolder("");}}
-                          style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",cursor:"pointer",borderBottom:"1px solid var(--border2)"}}
-                          onMouseEnter={e=>e.currentTarget.style.background="var(--bg)"}
-                          onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                          <span style={{fontSize:14}}>📂</span>
-                          <span style={{fontSize:13,fontWeight:500,color:"var(--text3)"}}>General (default)</span>
-                        </div>
-                        {filteredFolders.map(f=>(
-                          <div key={f.id} onClick={()=>{setSelTeam(f.name);setTeamSearch("");setTeamDrop(false);setCustomFolder("");}}
-                            style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",cursor:"pointer",borderBottom:"1px solid var(--border2)"}}
+                          ))}
+                          {filteredFolders.length===0&&!teamSearch&&<div style={{padding:"10px 14px",fontSize:12,color:"var(--text4)"}}>No teams loaded</div>}
+                          <div onClick={()=>{setSelTeam("__new__");setTeamSearch("");setTeamDrop(false);}}
+                            style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",cursor:"pointer",borderTop:"1.5px solid var(--border)",background:"var(--bg)"}}
                             onMouseEnter={e=>e.currentTarget.style.background="var(--blue-bg)"}
-                            onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                            <span style={{fontSize:14}}>{f.type==="team"?"👥":"📁"}</span>
-                            <div style={{flex:1,minWidth:0}}>
-                              <p style={{margin:0,fontSize:13,fontWeight:600,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.label}</p>
-                            </div>
+                            onMouseLeave={e=>e.currentTarget.style.background="var(--bg)"}>
+                            <span style={{fontSize:14,color:"var(--blue)"}}>+</span>
+                            <span style={{fontSize:13,fontWeight:600,color:"var(--blue)"}}>Create new folder</span>
                           </div>
-                        ))}
-                        {filteredFolders.length===0&&!teamSearch&&<div style={{padding:"10px 14px",fontSize:12,color:"var(--text4)"}}>No teams loaded</div>}
-                        <div onClick={()=>{setSelTeam("__new__");setTeamSearch("");setTeamDrop(false);}}
-                          style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",cursor:"pointer",borderTop:"1.5px solid var(--border)",background:"var(--bg)"}}
-                          onMouseEnter={e=>e.currentTarget.style.background="var(--blue-bg)"}
-                          onMouseLeave={e=>e.currentTarget.style.background="var(--bg)"}>
-                          <span style={{fontSize:14,color:"var(--blue)"}}>+</span>
-                          <span style={{fontSize:13,fontWeight:600,color:"var(--blue)"}}>Create new folder</span>
                         </div>
+                      )}
+                    </div>
+                    {selTeam==="__new__"&&(
+                      <input className="field" style={{marginTop:8}} value={customFolder} onChange={e=>setCustomFolder(e.target.value)} placeholder="New folder name…" autoFocus/>
+                    )}
+                    {selTeam&&selTeam!=="__new__"&&!teamDrop&&(
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8,padding:"8px 12px",background:"var(--yellow-bg)",borderRadius:8,border:"1.5px solid var(--yellow-border)"}}>
+                        <span style={{fontSize:14}}>📁</span>
+                        <span style={{fontSize:12,fontWeight:600,color:"var(--yellow-c)"}}>{selTeam}</span>
+                      </div>
+                    )}
+                    {selTeam==="__new__"&&customFolder.trim()&&(
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8,padding:"8px 12px",background:"var(--green-bg)",borderRadius:8,border:"1.5px solid var(--green-border)"}}>
+                        <span style={{fontSize:14}}>📁</span>
+                        <span style={{fontSize:12,fontWeight:600,color:"var(--green)"}}>{customFolder.trim()} (new)</span>
                       </div>
                     )}
                   </div>
-                  {selTeam==="__new__"&&(
-                    <input className="field" style={{marginTop:8}} value={customFolder} onChange={e=>setCustomFolder(e.target.value)} placeholder="Enter new folder name…" autoFocus/>
-                  )}
-                  {selTeam&&selTeam!=="__new__"&&!teamDrop&&(
-                    <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8,padding:"8px 12px",background:"var(--yellow-bg)",borderRadius:8,border:"1.5px solid var(--yellow-border)"}}>
-                      <span style={{fontSize:16}}>📁</span>
-                      <span style={{fontSize:13,fontWeight:600,color:"var(--yellow-c)"}}>{selTeam}</span>
-                    </div>
-                  )}
-                  {selTeam==="__new__"&&customFolder.trim()&&(
-                    <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8,padding:"8px 12px",background:"var(--green-bg)",borderRadius:8,border:"1.5px solid var(--green-border)"}}>
-                      <span style={{fontSize:16}}>📁</span>
-                      <span style={{fontSize:13,fontWeight:600,color:"var(--green)"}}>{customFolder.trim()} (new)</span>
-                    </div>
-                  )}
                 </div>
 
-                <div style={{marginBottom:14}}>
-                  <span className="lbl">File title</span>
-                  <input className="field" value={title} onChange={e=>setTitle(e.target.value)} placeholder="e.g. Frontend & React Skills"/>
-                </div>
-                <div style={{marginBottom:14}}>
-                  <span className="lbl">Skill category</span>
-                  <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                    {CATEGORIES.map(cat=>{
-                      const active = selCategory===cat.id;
-                      return (
-                        <button key={cat.id} type="button" onClick={()=>setSelCategory(active?"":cat.id)}
-                          style={{display:"inline-flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:20,
-                            border:`1.5px solid ${active?cat.c:cat.border}`,background:active?cat.bg:"var(--card)",
-                            color:active?cat.c:"var(--text3)",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
-                          <span>{cat.icon}</span>{cat.label}
-                        </button>
-                      );
-                    })}
+                {/* ── Row 2: Title + Category (side by side) ── */}
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
+                  <div>
+                    <span className="lbl">File title</span>
+                    <input className="field" value={title} onChange={e=>setTitle(e.target.value)} placeholder="e.g. Frontend & React Skills"/>
+                  </div>
+                  <div>
+                    <span className="lbl">Skill category</span>
+                    <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                      {CATEGORIES.map(cat=>{
+                        const active = selCategory===cat.id;
+                        return (
+                          <button key={cat.id} type="button" onClick={()=>setSelCategory(active?"":cat.id)}
+                            style={{display:"inline-flex",alignItems:"center",gap:4,padding:"6px 10px",borderRadius:20,
+                              border:`1.5px solid ${active?cat.c:cat.border}`,background:active?cat.bg:"var(--card)",
+                              color:active?cat.c:"var(--text3)",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
+                            <span>{cat.icon}</span>{cat.label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
-                <div style={{marginBottom:14}}>
+
+                {/* ── Row 3: Tags (full width) ── */}
+                <div style={{marginBottom:16}}>
                   <span className="lbl">Tags</span>
                   <TagInput tags={uploadTags} onChange={setUploadTags}/>
                 </div>
-                <div style={{marginBottom:14}}>
+
+                {/* ── Row 4: Description (full width) ── */}
+                <div style={{marginBottom:16}}>
                   <span className="lbl">Short description</span>
                   <textarea className="field" value={desc} onChange={e=>setDesc(e.target.value)} placeholder="Brief summary of skills covered" rows={2} style={{resize:"vertical",lineHeight:1.6}}/>
                 </div>
 
+                {/* ── Row 4: File drop (full width) ── */}
                 <div style={{marginBottom:18}}>
                   <span className="lbl">skill.md file</span>
                   <div className={`drop${dragOver?" drop-over":""}`}
                     onDragOver={e=>{e.preventDefault();setDragOver(true)}}
                     onDragLeave={()=>setDragOver(false)}
                     onDrop={e=>{e.preventDefault();setDragOver(false);pickFile(e.dataTransfer.files[0]);}}
-                    onClick={()=>fileRef.current.click()}>
+                    onClick={()=>fileRef.current.click()}
+                    style={{padding:24}}>
                     {selFile?(
                       <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12}}>
-                        <span style={{fontSize:28}}>📄</span>
+                        <span style={{fontSize:24}}>📄</span>
                         <div style={{textAlign:"left"}}>
-                          <p style={{margin:0,fontSize:14,fontWeight:600,color:"var(--text)"}}>{selFile.name}</p>
-                          <p style={{margin:"2px 0 0",fontSize:12,color:"var(--text3)"}}>
+                          <p style={{margin:0,fontSize:13,fontWeight:600,color:"var(--text)"}}>{selFile.name}</p>
+                          <p style={{margin:"2px 0 0",fontSize:11,color:"var(--text3)"}}>
                             {(selFile.size/1024).toFixed(1)} KB ·{" "}
                             <span style={{color:"var(--blue)",cursor:"pointer"}} onClick={e=>{e.stopPropagation();setSelFile(null);fileRef.current.value="";}}>Remove</span>
                           </p>
                         </div>
                       </div>
                     ):(
-                      <>
-                        <div style={{fontSize:32,marginBottom:8}}>☁️</div>
-                        <p style={{fontSize:14,fontWeight:600,color:"var(--text)",marginBottom:4}}>Drop your <code style={{background:"#dbeafe",color:"#1e40af",padding:"1px 6px",borderRadius:4,fontSize:12}}>skill.md</code> here</p>
-                        <p style={{fontSize:12,color:"var(--text4)"}}>or click to browse · .md files only</p>
-                      </>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12}}>
+                        <span style={{fontSize:28}}>☁️</span>
+                        <div>
+                          <p style={{fontSize:13,fontWeight:600,color:"var(--text)",margin:0}}>Drop your <code style={{background:"#dbeafe",color:"#1e40af",padding:"1px 6px",borderRadius:4,fontSize:11}}>skill.md</code> here</p>
+                          <p style={{fontSize:11,color:"var(--text4)",margin:"2px 0 0"}}>or click to browse · .md files only</p>
+                        </div>
+                      </div>
                     )}
                   </div>
                   <input ref={fileRef} type="file" accept=".md" style={{display:"none"}} onChange={e=>pickFile(e.target.files[0])}/>
                 </div>
 
+                {/* ── Upload button ── */}
                 <button onClick={upload} disabled={!ready||uploading}
                   style={{width:"100%",padding:"12px",borderRadius:10,border:"none",fontFamily:"Inter,sans-serif",
                     background:ready&&!uploading?"var(--blue)":"var(--border)",
