@@ -215,7 +215,7 @@ app.post("/files", async (req, res) => {
 // PUT /files/:id — update file metadata or content
 app.put("/files/:id", async (req, res) => {
   if (!SUPABASE_URL || !SUPABASE_KEY) return res.status(500).json({ error: "SUPABASE_URL or SUPABASE_KEY not configured" });
-  const baseFields = ["title", "description", "category", "folder", "content"];
+  const baseFields = ["title", "description", "category", "folder", "content", "filename", "size"];
   const extraFields = ["tags"];
   const updates = {};
   for (const key of [...baseFields, ...extraFields]) {

@@ -366,22 +366,36 @@ function App() {
   };
 
   // ── Edit file ──
+  const editFileRef = useRef();
   const openEdit = f => {
-    setEditData({title:f.title||"",description:f.desc||"",category:f.category||"",folder:f.folder||"General",tags:f.tags||[]});
+    setEditData({title:f.title||"",description:f.desc||"",category:f.category||"",folder:f.folder||"General",tags:f.tags||[],replaceFile:null});
     setEditModal(f);
+  };
+  const pickReplaceFile = f => {
+    if (!f) return;
+    if (!f.name.endsWith(".md")){ toast_("Only .md files allowed","error"); return; }
+    setEditData(d=>({...d,replaceFile:f}));
   };
   const saveEdit = async () => {
     if (!editModal||saving) return;
     setSaving(true);
     try {
+      const payload = {...editData,tags:editData.tags?.join(",")||""};
+      if (editData.replaceFile) {
+        const content = await editData.replaceFile.text();
+        payload.content = content;
+        payload.filename = editData.replaceFile.name;
+        payload.size = editData.replaceFile.size;
+      }
+      delete payload.replaceFile;
       const r = await fetch(`${PROXY}/files/${editModal.id}`,{
         method:"PUT", headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({...editData,tags:editData.tags?.join(",")||""})
+        body:JSON.stringify(payload)
       });
       if (!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error||`HTTP ${r.status}`); }
       setEditModal(null);
       await loadFiles();
-      toast_("File updated");
+      toast_(editData.replaceFile ? "File replaced & updated" : "File updated");
     } catch(e){ toast_(`Update failed: ${e.message}`,"error"); }
     setSaving(false);
   };
@@ -1021,6 +1035,34 @@ function App() {
         <div style={{marginBottom:18}}>
           <span className="lbl">Tags</span>
           <TagInput tags={editData.tags||[]} onChange={tags=>setEditData(d=>({...d,tags}))}/>
+        </div>
+        <div style={{marginBottom:18}}>
+          <span className="lbl">Replace .md file</span>
+          <div style={{border:"1.5px dashed var(--border)",borderRadius:10,padding:16,textAlign:"center",cursor:"pointer",transition:"all .15s",
+            background:editData.replaceFile?"var(--green-bg)":"var(--bg)",borderColor:editData.replaceFile?"var(--green-border)":"var(--border)"}}
+            onClick={()=>editFileRef.current.click()}
+            onDragOver={e=>{e.preventDefault();e.currentTarget.style.borderColor="var(--blue)";e.currentTarget.style.background="var(--blue-bg)";}}
+            onDragLeave={e=>{e.currentTarget.style.borderColor=editData.replaceFile?"var(--green-border)":"var(--border)";e.currentTarget.style.background=editData.replaceFile?"var(--green-bg)":"var(--bg)";}}
+            onDrop={e=>{e.preventDefault();e.currentTarget.style.borderColor=editData.replaceFile?"var(--green-border)":"var(--border)";e.currentTarget.style.background=editData.replaceFile?"var(--green-bg)":"var(--bg)";pickReplaceFile(e.dataTransfer.files[0]);}}>
+            {editData.replaceFile?(
+              <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+                <span style={{fontSize:20}}>📄</span>
+                <div style={{textAlign:"left"}}>
+                  <p style={{margin:0,fontSize:12,fontWeight:600,color:"var(--text)"}}>{editData.replaceFile.name}</p>
+                  <p style={{margin:"2px 0 0",fontSize:11,color:"var(--text3)"}}>
+                    {(editData.replaceFile.size/1024).toFixed(1)} KB ·{" "}
+                    <span style={{color:"var(--red)",cursor:"pointer"}} onClick={e=>{e.stopPropagation();setEditData(d=>({...d,replaceFile:null}));editFileRef.current.value="";}}>Remove</span>
+                  </p>
+                </div>
+              </div>
+            ):(
+              <div>
+                <p style={{fontSize:12,fontWeight:500,color:"var(--text3)",margin:0}}>Drop a new .md file here or click to browse</p>
+                <p style={{fontSize:10,color:"var(--text4)",margin:"4px 0 0"}}>Optional — leave empty to keep current file</p>
+              </div>
+            )}
+          </div>
+          <input ref={editFileRef} type="file" accept=".md" style={{display:"none"}} onChange={e=>pickReplaceFile(e.target.files[0])}/>
         </div>
         <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
           <button className="btn btn-ghost" onClick={()=>setEditModal(null)}>Cancel</button>
