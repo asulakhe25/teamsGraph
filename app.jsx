@@ -4,23 +4,6 @@ const PROXY  = "https://teamsgraph.onrender.com";
 const ORG    = "Sogolytics";
 const PAGE_SIZE = 20;
 
-// ── Microsoft Auth (MSAL) Config ──
-const MSAL_CLIENT_ID = "08412c34-dfc4-422f-8920-2e597fed36f0";
-const MSAL_TENANT_ID = "26d9ea9b-950a-4f75-a918-c502ccdaea32";
-let msalInstance = null;
-try {
-  if (window.msal && window.msal.PublicClientApplication) {
-    msalInstance = new msal.PublicClientApplication({
-      auth: {
-        clientId: MSAL_CLIENT_ID,
-        authority: `https://login.microsoftonline.com/${MSAL_TENANT_ID}`,
-        redirectUri: window.location.origin + window.location.pathname,
-      },
-      cache: { cacheLocation: "localStorage", storeAuthStateInCookie: false },
-    });
-  }
-} catch(e) { console.warn("MSAL init failed:", e); }
-
 const AC = [{bg:"#f3f0ff",c:"#6d28d9"},{bg:"#ecfdf5",c:"#065f46"},{bg:"#fff7ed",c:"#9a3412"},{bg:"#eff6ff",c:"#1e40af"},{bg:"#fdf4ff",c:"#86198f"},{bg:"#fefce8",c:"#854d0e"}];
 const CATEGORIES = [
   {id:"bug-fix",     label:"Bug Fix",      icon:"\u{1F41B}", bg:"#fef2f2", c:"#991b1b", border:"#fecaca"},
@@ -109,10 +92,6 @@ function TagInput({tags,onChange}){
 
 function App() {
   // ── State ──
-  // ── Auth state ──
-  const [authUser,   setAuthUser]   = useState(null);  // {name, email}
-  const [authLoading,setAuthLoading]= useState(true);
-
   const [tab,        setTab]        = useState("browse");
   const [files,      setFiles]      = useState([]);
   const [members,    setMembers]    = useState(()=> JSON.parse(localStorage.getItem("sm")||"[]"));
@@ -156,65 +135,6 @@ function App() {
   const memRef  = useRef();
   const teamRef = useRef();
   const searchRef = useRef();
-
-  // ── Microsoft Auth ──
-  useEffect(()=>{
-    if (!msalInstance) { setAuthLoading(false); return; }
-    msalInstance.initialize().then(()=>{
-      msalInstance.handleRedirectPromise().then(resp=>{
-        if (resp?.account) {
-          setAuthUser({name:resp.account.name,email:(resp.account.username||"").toLowerCase()});
-        } else {
-          const accounts = msalInstance.getAllAccounts();
-          if (accounts.length>0) {
-            setAuthUser({name:accounts[0].name,email:(accounts[0].username||"").toLowerCase()});
-          }
-        }
-      }).catch(()=>{}).finally(()=>setAuthLoading(false));
-    }).catch(()=>setAuthLoading(false));
-  },[]);
-
-  const login = async () => {
-    if (!msalInstance) { toast_("Microsoft Auth library not loaded. Check your internet connection and reload.","error"); return; }
-    try {
-      const resp = await msalInstance.loginPopup({scopes:["User.Read"]});
-      if (resp?.account) {
-        setAuthUser({name:resp.account.name,email:(resp.account.username||"").toLowerCase()});
-        toast_(`Signed in as ${resp.account.name}`);
-      }
-    } catch(e) { if(e.name!=="BrowserAuthError") toast_(`Login failed: ${e.message}`,"error"); }
-  };
-
-  const logout = () => {
-    if (!msalInstance) return;
-    msalInstance.logoutPopup().then(()=>{setAuthUser(null);toast_("Signed out","info");}).catch(()=>{});
-  };
-
-  const getAccessToken = async () => {
-    if (!msalInstance||!authUser) return null;
-    try {
-      const accounts = msalInstance.getAllAccounts();
-      if (accounts.length===0) return null;
-      const resp = await msalInstance.acquireTokenSilent({scopes:["User.Read"],account:accounts[0]});
-      return resp.accessToken;
-    } catch(e) {
-      try {
-        const resp = await msalInstance.acquireTokenPopup({scopes:["User.Read"]});
-        return resp.accessToken;
-      } catch(e2) { return null; }
-    }
-  };
-
-  // Check if logged-in user owns a file (by email match)
-  const isOwner = f => authUser && f.email && authUser.email === (f.email||"").toLowerCase();
-
-  // Auto-select member when logged in via Outlook
-  useEffect(()=>{
-    if (authUser && members.length>0 && !selMem) {
-      const match = members.find(m=>(m.email||"").toLowerCase()===authUser.email);
-      if (match) setSelMem(match);
-    }
-  },[authUser,members]);
 
   // ── Dark mode ──
   useEffect(()=>{
@@ -433,10 +353,8 @@ function App() {
     if (!deleteModal||deleting) return;
     setDeleting(true);
     try {
-      const token = await getAccessToken();
-      if (!token){ toast_("Please sign in with Outlook to delete files","error"); setDeleting(false); return; }
       const r = await fetch(`${PROXY}/files/${deleteModal.id}`,{
-        method:"DELETE", headers:{"x-delete-password":deletePwd,"Authorization":`Bearer ${token}`}
+        method:"DELETE", headers:{"x-delete-password":deletePwd}
       });
       if (!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error||`HTTP ${r.status}`); }
       if (preview?.id===deleteModal.id) setPreview(null);
@@ -470,10 +388,8 @@ function App() {
         payload.size = editData.replaceFile.size;
       }
       delete payload.replaceFile;
-      const token = await getAccessToken();
-      if (!token){ toast_("Please sign in with Outlook to edit files","error"); setSaving(false); return; }
       const r = await fetch(`${PROXY}/files/${editModal.id}`,{
-        method:"PUT", headers:{"Content-Type":"application/json","Authorization":`Bearer ${token}`},
+        method:"PUT", headers:{"Content-Type":"application/json"},
         body:JSON.stringify(payload)
       });
       if (!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error||`HTTP ${r.status}`); }
@@ -566,25 +482,6 @@ function App() {
             <p style={{fontSize:13,color:"rgba(255,255,255,.8)",margin:0}}>dev.azure.com / <b>Sogolytics</b></p>
           </div>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
-            {/* Outlook Login/User */}
-            {authUser ? (
-              <div style={{display:"flex",alignItems:"center",gap:8}}>
-                <div style={{display:"flex",alignItems:"center",gap:6,padding:"5px 12px",borderRadius:20,background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.3)"}}>
-                  <div style={{width:22,height:22,borderRadius:"50%",background:"#4ade80",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#065f46"}}>{ini(authUser.name)}</div>
-                  <span style={{fontSize:11,color:"#fff",fontWeight:500,maxWidth:120,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{authUser.name}</span>
-                </div>
-                <div onClick={logout} title="Sign out"
-                  style={{display:"flex",alignItems:"center",gap:4,fontSize:11,padding:"5px 10px",borderRadius:20,background:"rgba(255,255,255,.1)",color:"rgba(255,255,255,.7)",border:"1px solid rgba(255,255,255,.2)",cursor:"pointer",fontWeight:500}}>
-                  Sign out
-                </div>
-              </div>
-            ) : (
-              <div onClick={login}
-                style={{display:"flex",alignItems:"center",gap:6,fontSize:11,padding:"5px 14px",borderRadius:20,background:"rgba(255,255,255,.2)",color:"#fff",border:"1px solid rgba(255,255,255,.3)",cursor:"pointer",fontWeight:600}}>
-                <svg width="14" height="14" viewBox="0 0 23 23" fill="none"><path d="M1 1h10v10H1z" fill="#f25022"/><path d="M12 1h10v10H12z" fill="#7fba00"/><path d="M1 12h10v10H1z" fill="#00a4ef"/><path d="M12 12h10v10H12z" fill="#ffb900"/></svg>
-                Sign in with Outlook
-              </div>
-            )}
             <div onClick={()=>setDarkMode(!darkMode)} title={darkMode?"Light mode":"Dark mode"}
               style={{display:"flex",alignItems:"center",gap:5,fontSize:11,padding:"5px 12px",borderRadius:20,background:"rgba(255,255,255,.15)",color:"#fff",border:"1px solid rgba(255,255,255,.25)",cursor:"pointer",fontWeight:500}}>
               <span style={{fontSize:14,lineHeight:1}}>{darkMode?"☀️":"🌙"}</span> {darkMode?"Light":"Dark"}
@@ -967,13 +864,11 @@ function App() {
                           <path d="M16 3l5 2.5v13L16 21l-11-5.5L16 3z"/><path d="M5 15.5L10 12 5 8.5"/><path d="M16 3v18"/>
                         </svg>
                       </button>
-                      {isOwner(f)&&(
                       <button className="btn btn-ghost" onClick={()=>openEdit(f)} title="Edit">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                         </svg>
                       </button>
-                      )}
                       <button className="btn btn-ghost" onClick={()=>download(f)} title="Download">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
@@ -984,7 +879,6 @@ function App() {
                           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
                         </svg>
                       </button>
-                      {isOwner(f)&&(
                       <button className="btn btn-ghost" onClick={()=>{setDeleteModal(f);setDeletePwd("");}} title="Delete"
                         style={{borderColor:"var(--red-border)",color:"var(--red)"}}
                         onMouseEnter={e=>{e.currentTarget.style.background="var(--red-bg)";e.currentTarget.style.borderColor="#f87171";}}
@@ -993,7 +887,6 @@ function App() {
                           <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
                         </svg>
                       </button>
-                      )}
                     </div>
                   </div>
 
