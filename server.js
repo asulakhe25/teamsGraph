@@ -12,6 +12,48 @@ const SUPABASE_KEY = process.env.SUPABASE_KEY;
 // ── Delete password (server-side only) ──
 const DELETE_PASSWORD = process.env.DELETE_PASSWORD || "delete234";
 
+// ── Microsoft Auth: Verify access token and extract user email ──
+async function verifyMsToken(req) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) return null;
+  const token = authHeader.split(" ")[1];
+  try {
+    // Call Microsoft Graph /me to validate token and get user info
+    const r = await fetch("https://graph.microsoft.com/v1.0/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!r.ok) return null;
+    const user = await r.json();
+    return {
+      email: (user.mail || user.userPrincipalName || "").toLowerCase(),
+      name: user.displayName || "",
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
+// Helper: check if authenticated user owns the file
+async function checkOwnership(req, fileId) {
+  const user = await verifyMsToken(req);
+  if (!user) return { ok: false, status: 401, error: "Sign in with Outlook to perform this action" };
+
+  // Fetch the file's uploader email from Supabase
+  const r = await fetch(
+    `${SUPABASE_URL}/rest/v1/skill_files?id=eq.${encodeURIComponent(fileId)}&select=email,uploader`,
+    { headers: sbHeaders() }
+  );
+  if (!r.ok) return { ok: false, status: 500, error: "Could not verify file ownership" };
+  const rows = await r.json();
+  if (rows.length === 0) return { ok: false, status: 404, error: "File not found" };
+
+  const fileEmail = (rows[0].email || "").toLowerCase();
+  if (fileEmail && user.email !== fileEmail) {
+    return { ok: false, status: 403, error: `Only ${rows[0].uploader} can modify this file` };
+  }
+  return { ok: true, user };
+}
+
 function sbHeaders() {
   return {
     apikey: SUPABASE_KEY,
@@ -212,9 +254,13 @@ app.post("/files", async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// PUT /files/:id — update file metadata or content
+// PUT /files/:id — update file metadata or content (requires Outlook login + ownership)
 app.put("/files/:id", async (req, res) => {
   if (!SUPABASE_URL || !SUPABASE_KEY) return res.status(500).json({ error: "SUPABASE_URL or SUPABASE_KEY not configured" });
+  // Verify ownership
+  const auth = await checkOwnership(req, req.params.id);
+  if (!auth.ok) return res.status(auth.status).json({ error: auth.error });
+
   const baseFields = ["title", "description", "category", "folder", "content", "filename", "size"];
   const extraFields = ["tags"];
   const updates = {};
@@ -256,9 +302,13 @@ app.put("/files/:id", async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// DELETE /files/:id — delete with server-side password validation
+// DELETE /files/:id — delete with Outlook login + ownership + password
 app.delete("/files/:id", async (req, res) => {
   if (!SUPABASE_URL || !SUPABASE_KEY) return res.status(500).json({ error: "SUPABASE_URL or SUPABASE_KEY not configured" });
+  // Verify ownership
+  const auth = await checkOwnership(req, req.params.id);
+  if (!auth.ok) return res.status(auth.status).json({ error: auth.error });
+
   const pwd = req.headers["x-delete-password"];
   if (!pwd || pwd !== DELETE_PASSWORD) return res.status(403).json({ error: "Invalid delete password" });
   try {
