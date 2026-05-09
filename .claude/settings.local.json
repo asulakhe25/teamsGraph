@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -sI \"https://alcdn.msauth.net/browser/2.38.2/js/msal-browser.min.js\")",
+      "Bash(curl -sI \"https://alcdn.msauth.net/browser/2.37.1/js/msal-browser.min.js\")",
+      "Bash(curl -sI \"https://alcdn.msauth.net/browser/2.36.0/js/msal-browser.min.js\")",
+      "Bash(curl -sI \"https://alcdn.msauth.net/browser/2.35.0/js/msal-browser.min.js\")",
+      "Bash(curl -s \"https://alcdn.msauth.net/browser/2.38.2/js/msal-browser.min.js\")"
+    ]
+  }
+}

@@ -5,16 +5,21 @@ const ORG    = "Sogolytics";
 const PAGE_SIZE = 20;
 
 // ── Microsoft Auth (MSAL) Config ──
-// TODO: Replace these with your Azure App Registration values
-const MSAL_CONFIG = {
-  auth: {
-    clientId: "08412c34-dfc4-422f-8920-2e597fed36f0",           // From Azure Portal > App Registration > Overview
-    authority: "https://login.microsoftonline.com/26d9ea9b-950a-4f75-a918-c502ccdaea32", // Your tenant ID
-    redirectUri: window.location.origin,
-  },
-  cache: { cacheLocation: "localStorage", storeAuthStateInCookie: false },
-};
-const msalInstance = window.msal ? new msal.PublicClientApplication(MSAL_CONFIG) : null;
+const MSAL_CLIENT_ID = "08412c34-dfc4-422f-8920-2e597fed36f0";
+const MSAL_TENANT_ID = "26d9ea9b-950a-4f75-a918-c502ccdaea32";
+let msalInstance = null;
+try {
+  if (window.msal && window.msal.PublicClientApplication) {
+    msalInstance = new msal.PublicClientApplication({
+      auth: {
+        clientId: MSAL_CLIENT_ID,
+        authority: `https://login.microsoftonline.com/${MSAL_TENANT_ID}`,
+        redirectUri: window.location.origin,
+      },
+      cache: { cacheLocation: "localStorage", storeAuthStateInCookie: false },
+    });
+  }
+} catch(e) { console.warn("MSAL init failed:", e); }
 
 const AC = [{bg:"#f3f0ff",c:"#6d28d9"},{bg:"#ecfdf5",c:"#065f46"},{bg:"#fff7ed",c:"#9a3412"},{bg:"#eff6ff",c:"#1e40af"},{bg:"#fdf4ff",c:"#86198f"},{bg:"#fefce8",c:"#854d0e"}];
 const CATEGORIES = [
@@ -170,7 +175,7 @@ function App() {
   },[]);
 
   const login = async () => {
-    if (!msalInstance) { toast_("MSAL not loaded","error"); return; }
+    if (!msalInstance) { toast_("Microsoft Auth library not loaded. Check your internet connection and reload.","error"); return; }
     try {
       const resp = await msalInstance.loginPopup({scopes:["User.Read"]});
       if (resp?.account) {
