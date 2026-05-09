@@ -187,15 +187,26 @@ app.post("/files", async (req, res) => {
   if (!id || !filename || !uploader || !content) return res.status(400).json({ error: "Missing required fields: id, filename, uploader, content" });
   if (size && size > 5 * 1024 * 1024) return res.status(400).json({ error: "File too large. Max 5MB." });
   try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/skill_files`, {
-      method: "POST", headers: sbHeaders(),
-      body: JSON.stringify({
-        id, filename, title, description, uploader, email, size, uploaded_at, content,
-        folder: folder || "General", category: category || "", tags: tags || "",
-        version: 1, updated_at: uploaded_at
-      }),
+    const base = { id, filename, title, description, uploader, email, size, uploaded_at, content,
+      folder: folder || "General", category: category || "" };
+    const extra = { tags: tags || "", version: 1, updated_at: uploaded_at };
+
+    // Try with new columns first, fallback without if columns don't exist yet
+    let r = await fetch(`${SUPABASE_URL}/rest/v1/skill_files`, {
+      method: "POST", headers: sbHeaders(), body: JSON.stringify({ ...base, ...extra }),
     });
-    if (!r.ok) { const t = await r.text(); return res.status(r.status).json({ error: t }); }
+    if (!r.ok) {
+      const t = await r.text();
+      if (t.includes("PGRST204") || t.includes("column")) {
+        // Retry without new columns
+        r = await fetch(`${SUPABASE_URL}/rest/v1/skill_files`, {
+          method: "POST", headers: sbHeaders(), body: JSON.stringify(base),
+        });
+        if (!r.ok) { const t2 = await r.text(); return res.status(r.status).json({ error: t2 }); }
+      } else {
+        return res.status(r.status).json({ error: t });
+      }
+    }
     const rows = await r.json();
     return res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -204,24 +215,42 @@ app.post("/files", async (req, res) => {
 // PUT /files/:id — update file metadata or content
 app.put("/files/:id", async (req, res) => {
   if (!SUPABASE_URL || !SUPABASE_KEY) return res.status(500).json({ error: "SUPABASE_URL or SUPABASE_KEY not configured" });
-  const allowed = ["title", "description", "category", "folder", "content", "tags"];
+  const baseFields = ["title", "description", "category", "folder", "content"];
+  const extraFields = ["tags"];
   const updates = {};
-  for (const key of allowed) {
+  for (const key of [...baseFields, ...extraFields]) {
     if (req.body[key] !== undefined) updates[key] = req.body[key];
   }
   if (Object.keys(updates).length === 0) return res.status(400).json({ error: "No valid fields to update" });
-  updates.updated_at = Date.now();
   try {
-    // Increment version
-    const getR = await fetch(`${SUPABASE_URL}/rest/v1/skill_files?id=eq.${encodeURIComponent(req.params.id)}&select=version`, { headers: sbHeaders() });
-    if (getR.ok) {
-      const rows = await getR.json();
-      if (rows.length > 0) updates.version = (rows[0].version || 1) + 1;
-    }
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/skill_files?id=eq.${encodeURIComponent(req.params.id)}`, {
-      method: "PATCH", headers: sbHeaders(), body: JSON.stringify(updates),
+    // Try with version/updated_at, fallback without
+    const withExtra = { ...updates, updated_at: Date.now() };
+    // Try to increment version
+    try {
+      const getR = await fetch(`${SUPABASE_URL}/rest/v1/skill_files?id=eq.${encodeURIComponent(req.params.id)}&select=version`, { headers: sbHeaders() });
+      if (getR.ok) {
+        const rows = await getR.json();
+        if (rows.length > 0 && rows[0].version) withExtra.version = (rows[0].version || 1) + 1;
+      }
+    } catch(e) {}
+
+    let r = await fetch(`${SUPABASE_URL}/rest/v1/skill_files?id=eq.${encodeURIComponent(req.params.id)}`, {
+      method: "PATCH", headers: sbHeaders(), body: JSON.stringify(withExtra),
     });
-    if (!r.ok) { const t = await r.text(); return res.status(r.status).json({ error: t }); }
+    if (!r.ok) {
+      const t = await r.text();
+      if (t.includes("PGRST204") || t.includes("column")) {
+        // Strip new columns and retry
+        const safe = {};
+        for (const key of baseFields) { if (updates[key] !== undefined) safe[key] = updates[key]; }
+        r = await fetch(`${SUPABASE_URL}/rest/v1/skill_files?id=eq.${encodeURIComponent(req.params.id)}`, {
+          method: "PATCH", headers: sbHeaders(), body: JSON.stringify(safe),
+        });
+        if (!r.ok) { const t2 = await r.text(); return res.status(r.status).json({ error: t2 }); }
+      } else {
+        return res.status(r.status).json({ error: t });
+      }
+    }
     const rows = await r.json();
     return res.json(rows[0] || { updated: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
