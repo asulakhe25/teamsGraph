@@ -11,8 +11,8 @@
   <!-- CDN Libraries -->
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
@@ -23,7 +23,14 @@
     fetch('app.jsx')
       .then(r => r.text())
       .then(code => {
-        const transformed = Babel.transform(code, { presets: ['react'] }).code;
+        if (typeof Babel === 'undefined') {
+          throw new Error('Babel failed to load from CDN. Check the @babel/standalone <script> tag / network.');
+        }
+        // env preset (modules: commonjs) strips any import/export so the output
+        // runs safely in a plain <script> instead of throwing "import outside a module".
+        const transformed = Babel.transform(code, {
+          presets: ['react', ['env', { modules: 'commonjs' }]]
+        }).code;
         const script = document.createElement('script');
         script.textContent = transformed;
         document.body.appendChild(script);
